@@ -24,22 +24,51 @@ def insertion_sort(arr):
     return arr
 
 
+def gap_insertion_sort(arr, start, gap):
+    '''In-place insertion sort on arr with given start and gap, used in shell_sort'''
+    for i in range (start+gap, len(arr), gap):
+        current = arr[i]
+        while i >= gap:
+            if arr[i-gap] > current:
+                arr[i] = arr[i-gap]
+                i -= gap
+            else:
+                break
+        arr[i] = current
+    return arr
+
+
+def shell_sort(arr):
+    '''Runs shell sort with gap starting at n//2 and then gap = gap // 2 etc'''
+    gap = len(arr) // 2
+    gap_list = []
+    while gap > 0:
+        gap_list.append(gap)  # build a list of gaps used as we go
+        for start_position in range(gap):
+            gap_insertion_sort(arr, start_position, gap)
+        gap = gap // 2
+    return arr
+
+
+
 import random
 
 x =[random.randint(-2**8,2**8) for i in range(22)]
-a,b,c = [i for i in x], [i for i in x], [i for i in x]
+a,b,c,d = [i for i in x], [i for i in x], [i for i in x], [i for i in x]
 
-print("unsorted", a==b==c)
+print("unsorted", a==b==c==d)
 print(a)
 print(b)
 print(c)
+print(d)
 
 selection_sort(a)
 insertion_sort(b)
 c = sorted(c)
+shell_sort(d)
 
-print("sorted", a==b==c)
+print("sorted", a==b==c==d)
 print(a)
 print(b)
 print(c)
-
+print(d)

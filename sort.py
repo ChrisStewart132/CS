@@ -49,26 +49,56 @@ def shell_sort(arr):
         gap = gap // 2
     return arr
 
+def merge(left, right, l=0, r=0):
+    result = []
+    while l < len(left) and r < len(right):
+        if left[l] < right[r]:
+            result.append(left[l])
+            l+=1
+        else:
+            result.append(right[r])
+            r+=1
 
+    # append the remaining sorted list
+    if l < len(left):
+        result += left[l:]
+    else:
+        result += right[r:]
+
+    return result
+
+def merge_sort(nums):
+    """
+    :type nums: List[int]
+    :rtype: List[int]
+    """
+    if len(nums) == 1:
+        return nums        
+    left = merge_sort(nums[:len(nums)//2])
+    right = merge_sort(nums[len(nums)//2:])
+    return merge(left, right)
 
 import random
 
 x =[random.randint(-2**8,2**8) for i in range(22)]
-a,b,c,d = [i for i in x], [i for i in x], [i for i in x], [i for i in x]
+a,b,c,d,e = [i for i in x], [i for i in x], [i for i in x], [i for i in x], [i for i in x]
 
-print("unsorted", a==b==c==d)
+print("unsorted", a==b==c==d==e)
 print(a)
 print(b)
 print(c)
 print(d)
+print(e)
 
 selection_sort(a)
 insertion_sort(b)
 c = sorted(c)
 shell_sort(d)
+e = merge_sort(e)
 
-print("sorted", a==b==c==d)
+print("sorted", a==b==c==d==e)
 print(a)
 print(b)
 print(c)
 print(d)
+print(e)

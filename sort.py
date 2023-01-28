@@ -67,38 +67,54 @@ def merge(left, right, l=0, r=0):
 
     return result
 
-def merge_sort(nums):
+def merge_sort(arr):
     """
     :type nums: List[int]
     :rtype: List[int]
     """
-    if len(nums) == 1:
-        return nums        
-    left = merge_sort(nums[:len(nums)//2])
-    right = merge_sort(nums[len(nums)//2:])
+    if len(arr) == 1:
+        return arr        
+    left = merge_sort(arr[:len(arr)//2])
+    right = merge_sort(arr[len(arr)//2:])
     return merge(left, right)
 
+
+
+
+# tests
 import random
 
-x =[random.randint(-2**8,2**8) for i in range(22)]
-a,b,c,d,e = [i for i in x], [i for i in x], [i for i in x], [i for i in x], [i for i in x]
+in_place_sort_functions = [selection_sort, insertion_sort, shell_sort]
+copy_sort_functions = [merge_sort]
 
-print("unsorted", a==b==c==d==e)
-print(a)
-print(b)
-print(c)
-print(d)
-print(e)
+# random un-sorted array
+unsorted_array =[random.randint(-2**8,2**8) for i in range(22)]
 
-selection_sort(a)
-insertion_sort(b)
-c = sorted(c)
-shell_sort(d)
-e = merge_sort(e)
+# copies of the random un-sorted array for each sorting method
+arrays = [[i for i in unsorted_array] for j in range(4)]
 
-print("sorted", a==b==c==d==e)
-print(a)
-print(b)
-print(c)
-print(d)
-print(e)
+# sorted copy of unsorted_array to test against
+sorted_array = sorted(unsorted_array)
+
+print("unsorted", all([arrays[i] == sorted_array for i in range(len(arrays))]))
+[print(a) for a in arrays]
+
+for i in range(len(in_place_sort_functions)):
+    in_place_sort_functions[i](arrays[i])
+    
+for i in range(len(copy_sort_functions)):
+    arrays[i+len(in_place_sort_functions)] = copy_sort_functions[i](arrays[i+len(in_place_sort_functions)])
+
+print("sorted", all([arrays[i] == sorted_array for i in range(len(arrays))]))
+[print(a) for a in arrays]
+
+
+
+
+
+
+
+
+
+
+

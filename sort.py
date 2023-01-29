@@ -214,8 +214,7 @@ def quicksort_range_helper(values, left, right, start, end, style):
     # Sort the right part
     quicksort_range_helper(values, split + 1, right, start, end, style)
 
-
-def pivot_index_mo3(values, left, right):
+def pivot_index_mo3(arr, left, right):
     """
     Returns the index of the item that is the median of the left, right and
     middle value in the list. The return value should normally be
@@ -226,8 +225,12 @@ def pivot_index_mo3(values, left, right):
     If there is only one item in the range then also simply
     return the left index, ie, if left==right then return left.
     """
+    if right-left < 2:
+        return left
     middle = (left + right) // 2
-    return sorted(left,middle,right)[1]
+    x = (arr[left], arr[middle], arr[right])
+    return x[x.index(sorted(x)[1])]
+
 
 def main():
     in_place_sort_functions = [selection_sort, insertion_sort, shell_sort]
@@ -258,11 +261,4 @@ if __name__ == '__main__':
     # tests
     import random
     main()
-
-
-
-
-
-
-
 

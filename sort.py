@@ -1,4 +1,4 @@
-import heap
+import heap, time
 
 def selection_sort(arr):
     """
@@ -246,27 +246,37 @@ def main():
     in_place_sort_functions = [selection_sort, insertion_sort, shell_sort]
     copy_sort_functions = [merge_sort, quicksort, heap_sort]
     function_names = ['selection_sort', 'insertion_sort', 'shell_sort', 'merge_sort', 'quicksort', 'heap_sort']
+    sorting_time = [0 for n in function_names]
     
     # random un-sorted array
-    unsorted_array =[random.randint(-2**8,2**8) for i in range(22)]
-
+    unsorted_array =[random.randint(-2**8,2**8) for i in range(10000)]
+    
     # copies of the random un-sorted array for each sorting method
     arrays = [[i for i in unsorted_array] for j in range(len(in_place_sort_functions) + len(copy_sort_functions))]
 
     # sorted copy of unsorted_array to test against
     sorted_array = sorted(unsorted_array)
 
-    print("unsorted", all([arrays[i] == unsorted_array for i in range(len(arrays))]))
-    [print(arrays[i], function_names[i]) for i in range(len(arrays))]
+    print("Unsorted:", all([arrays[i] == unsorted_array for i in range(len(arrays))]))
 
     for i in range(len(in_place_sort_functions)):
+        start = time.perf_counter()
         in_place_sort_functions[i](arrays[i])
+        finish = time.perf_counter()
+        sorting_time[i] = finish - start
+        print(" ", function_names[i])
         
     for i in range(len(copy_sort_functions)):
+        start = time.perf_counter()
         arrays[i+len(in_place_sort_functions)] = copy_sort_functions[i](arrays[i+len(in_place_sort_functions)])
+        finish = time.perf_counter()
+        sorting_time[i+len(in_place_sort_functions)] = finish - start
+        print(" ", function_names[i+len(in_place_sort_functions)])
 
-    print("sorted", all([arrays[i] == sorted_array for i in range(len(arrays))]))
-    [print(arrays[i], function_names[i]) for i in range(len(arrays))]
+    print("Sorted:", all([arrays[i] == sorted_array for i in range(len(arrays))]))
+    [print(f" {sorting_time[i]:.6f}s,", function_names[i]) for i in range(len(arrays))]
+    print(f"Total sorting time: {sum(sorting_time):.6f}s")
+    print(f"Average sorting time: {sum(sorting_time) / len(sorting_time):.6f}s")
 
 if __name__ == '__main__':
     # tests

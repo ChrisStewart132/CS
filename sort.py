@@ -1,3 +1,5 @@
+import heap
+
 def selection_sort(arr):
     """
     start at back of arr, swap current with the largest element, continue with element-1 and largest
@@ -231,11 +233,20 @@ def pivot_index_mo3(arr, left, right):
     x = (arr[left], arr[middle], arr[right])
     return x[x.index(sorted(x)[1])]
 
+def heap_sort(arr):
+    h = heap.MinHeap()
+    for n in arr:
+        h.insert(n)
+    output = []
+    while not h.isEmpty():
+        output.append(h.pop_min())
+    return output
 
 def main():
     in_place_sort_functions = [selection_sort, insertion_sort, shell_sort]
-    copy_sort_functions = [merge_sort, quicksort]
-
+    copy_sort_functions = [merge_sort, quicksort, heap_sort]
+    function_names = ['selection_sort', 'insertion_sort', 'shell_sort', 'merge_sort', 'quicksort', 'heap_sort']
+    
     # random un-sorted array
     unsorted_array =[random.randint(-2**8,2**8) for i in range(22)]
 
@@ -246,7 +257,7 @@ def main():
     sorted_array = sorted(unsorted_array)
 
     print("unsorted", all([arrays[i] == unsorted_array for i in range(len(arrays))]))
-    [print(a) for a in arrays]
+    [print(arrays[i], function_names[i]) for i in range(len(arrays))]
 
     for i in range(len(in_place_sort_functions)):
         in_place_sort_functions[i](arrays[i])
@@ -255,7 +266,7 @@ def main():
         arrays[i+len(in_place_sort_functions)] = copy_sort_functions[i](arrays[i+len(in_place_sort_functions)])
 
     print("sorted", all([arrays[i] == sorted_array for i in range(len(arrays))]))
-    [print(a) for a in arrays]
+    [print(arrays[i], function_names[i]) for i in range(len(arrays))]
 
 if __name__ == '__main__':
     # tests

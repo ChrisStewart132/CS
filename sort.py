@@ -234,9 +234,7 @@ def pivot_index_mo3(arr, left, right):
     return x[x.index(sorted(x)[1])]
 
 def heap_sort(arr):
-    h = heap.MinHeap()
-    for n in arr:
-        h.insert(n)
+    h = heap.MinHeap(arr)
     output = []
     while not h.isEmpty():
         output.append(h.pop_min())

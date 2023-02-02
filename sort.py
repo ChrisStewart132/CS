@@ -60,7 +60,7 @@ def shell_sort(arr):
         gap = gap // 2
     return arr
 
-def merge(left, right, l=0, r=0):
+def merge_simple(left, right, l=0, r=0):
     """
     merge operation used in merge sort
     """
@@ -74,22 +74,78 @@ def merge(left, right, l=0, r=0):
             r+=1
 
     # append the remaining sorted list
-    if l < len(left):
-        result += left[l:]
-    else:
-        result += right[r:]
+    while l < len(left):
+        result.append(left[l])
+        l += 1
+    while r < len(right):
+        result.append(right[r])
+        r += 1
 
     return result
 
-def merge_sort(arr):
+def merge_sort_simple(arr):
     """
     creates a sorted copy of the given array
     """
     if len(arr) == 1:
         return arr        
-    left = merge_sort(arr[:len(arr)//2])
-    right = merge_sort(arr[len(arr)//2:])
-    return merge(left, right)
+    left = merge_sort_simple(arr[:len(arr)//2])
+    right = merge_sort_simple(arr[len(arr)//2:])
+    return merge_simple(left, right)
+
+def merge(arr, left_slice, right_slice):
+    """
+    merge operation used in merge sort but the two arrays are combined with indices used to divide them
+    """
+    l, r = 0, right_slice[0] - left_slice[0]
+    len_l, len_r = left_slice[1]+1 - left_slice[0], right_slice[1]+1 - left_slice[0]
+    
+    result = []
+    while l < len_l and r < len_r:
+        if arr[l] < arr[r]:
+            result.append(arr[l])
+            l+=1
+        else:
+            result.append(arr[r])
+            r+=1
+
+    # append the remaining sorted list
+    while l < len_l:
+        result.append(arr[l])
+        l += 1
+    while r < len_r:
+        result.append(arr[r])
+        r += 1
+
+    return result
+
+def _slice_array(left, right):
+    """
+    given left and right indices of an array, return two sets of left and right indices representing two halves
+    """
+    middle = (left+right) // 2
+    left_slice = left, middle
+    right_slice = middle + 1, right
+    return left_slice, right_slice
+
+def _merge_sort(arr, l=0, r=None):
+    """
+    implementation of merge_sort
+    """
+    if l == r:
+        return [arr[l]]
+    
+    left_slice, right_slice = _slice_array(l, r)
+
+    left = _merge_sort(arr, left_slice[0], left_slice[1])
+    right = _merge_sort(arr, right_slice[0], right_slice[1])
+    return merge(left+right, left_slice, right_slice)
+
+def merge_sort(arr):
+    """
+    creates a sorted copy of the given array
+    """
+    return _merge_sort(arr, 0, len(arr)-1)
 
 def quicksort(values, style='left-pivot'):
     """
@@ -242,8 +298,8 @@ def heap_sort(arr):
 
 def main():
     in_place_sort_functions = [selection_sort, insertion_sort, shell_sort]
-    copy_sort_functions = [merge_sort, quicksort, heap_sort]
-    function_names = ['selection_sort', 'insertion_sort', 'shell_sort', 'merge_sort', 'quicksort', 'heap_sort']
+    copy_sort_functions = [merge_sort_simple, merge_sort, quicksort, heap_sort]
+    function_names = ['selection_sort', 'insertion_sort', 'shell_sort', 'merge_sort_simple', 'merge_sort', 'quicksort', 'heap_sort']
     sorting_time = [0 for n in function_names]
     
     # random un-sorted array

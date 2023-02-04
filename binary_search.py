@@ -1,9 +1,11 @@
-# binary search that takes an array, target and returns the index of target in the array otherwise -1
+# binary search that takes a sorted array and target, returns the index of target in the array otherwise -1
 
 def search(arr, target, l=0, r=None):
-    '''checks middle element, searches recursively left / right of the middle'''
+    """
+    Checks middle element, searches recursively left / right of the middle.
+    """
     if r == None:
-        r = len(arr)-1
+        r = len(arr)
 
     m = l + (r-l) // 2# same as (l+r) // 2
     
@@ -16,10 +18,27 @@ def search(arr, target, l=0, r=None):
     else:
         return search(arr, target, l, m-1)
 
+def search_iterative(arr, target):
+    """
+    Iterative implementation of search
+    """
+    l, r = 0, len(arr)
+    while l < r:
+        i = (l + r) // 2
+        if arr[i] == target:
+            return i
+        elif arr[i] < target:
+            l = i + 1 
+        else:
+            r = i      
+    return l if arr[l] == target else -1
+
 def search2(arr, target, l=0, r=None):
-    '''neglects checking until only 1 element exists (less "if" stmts but log(n) searches)'''
+    """
+    Neglects checking until only 1 element exists (less "if" stmts but log(n) searches).
+    """
     if r == None:
-        r = len(arr)-1
+        r = len(arr)
 
     m = l + (r-l) // 2# same as (l+r) // 2
     
@@ -30,16 +49,42 @@ def search2(arr, target, l=0, r=None):
     else:
         return search(arr, target, l, m)
 
+def search2_iterative(arr, target):
+    """
+    Iterative implementation of search2
+    """
+    l, r = 0, len(arr)
+    while l < r:
+        i = (l + r) // 2
+        if arr[i] < target:
+            l = i + 1 
+        else:
+            r = i      
+    return l if arr[l] == target else -1
 
-import random
+def main():
+    sorted_array = [i for i in range(2**20)]
+    random_elements = [random.randint(0,2**20-1) for i in range(2**8)]
+    binary_search_functions = [search, search_iterative, search2, search2_iterative]
+    binary_search_function_names = ['search', 'search_iterative', 'search2', 'search2_iterative']
 
-x = sorted([random.randint(-2**8,2**8) for i in range(20)])
-print(x)
+    for f in range(len(binary_search_functions)):
+        start = time.perf_counter()
+        for i in range(len(random_elements)):
+            if binary_search_functions[f](sorted_array, random_elements[i]) != random_elements[i]:
+                print("error", binary_search_function_names[f])
+                return
+        finish = time.perf_counter()
+        print(f"{finish-start:.6f}s ({binary_search_function_names[f]})")
 
-# 0,1,2...,n
-print([search(x, i) for i in x])
-print([search2(x, i) for i in x])
+        if binary_search_functions[f](sorted_array, -1) != -1:# make sure elements not found return -1
+            print("error", binary_search_function_names[f])
+            return 
 
-# mostly -1,-1,...,-1
-print([search(x, i-1) for i in x])
-print([search2(x, i-1) for i in x])
+if __name__ == '__main__':
+    # tests
+    import random, time
+    main()
+
+
+

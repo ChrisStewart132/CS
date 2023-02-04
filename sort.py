@@ -1,4 +1,4 @@
-import heap, time
+import heap, binary_search_tree, time
 
 def selection_sort(arr):
     """
@@ -296,10 +296,16 @@ def heap_sort(arr):
         output.append(h.pop_min())
     return output
 
+def tree_sort(arr):
+    t = binary_search_tree.BinarySearchTree()
+    for i in arr:
+        t.insert(i)
+    return t.in_order_items_with_duplicates()
+
 def main():
     in_place_sort_functions = [selection_sort, insertion_sort, shell_sort]
-    copy_sort_functions = [merge_sort_simple, merge_sort, quicksort, heap_sort]
-    function_names = ['selection_sort', 'insertion_sort', 'shell_sort', 'merge_sort_simple', 'merge_sort', 'quicksort', 'heap_sort']
+    copy_sort_functions = [merge_sort_simple, merge_sort, quicksort, heap_sort, tree_sort]
+    function_names = ['selection_sort', 'insertion_sort', 'shell_sort', 'merge_sort_simple', 'merge_sort', 'quicksort', 'heap_sort', 'tree_sort']
     sorting_time = [0 for n in function_names]
     
     # random un-sorted array

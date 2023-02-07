@@ -1,3 +1,5 @@
+from queue import deque
+
 example_graph_string = '''\
 U 3 W
 0 1 7
@@ -10,6 +12,12 @@ Top row:
     Directed/Undirected number_of_vertices weight
 following rows:
     source_vertex destination_vertex weight/cost
+"""
+
+example_parent_array = [None, 0, 0]
+"""
+after a bfs traversal of example_graph_string starting from vertex 0
+    the parents of vertex 1 and 2 are vertex 0
 """
 
 def adjacency_matrix(graph_str):
@@ -54,6 +62,57 @@ def adjacency_list(graph_str):
     
     return output
 
+def dfs_tree(adj_list, start, stack, state=None, parent=None):
+    """
+    Depth First Search Traversal of a graph, returns state, parent, stack
+        State:
+            'P' for Processed i.e. Vertices reachable from the start
+            'U' for Undiscovered i.e. Vertices un-reachable from the start
+        Parent:
+            An array where index i represents Vertex i and parent[i] is its direct parent Vertex
+        Stack:
+            Traversal from the first deepest Vertex to the next deepest, to the start
+    """
+    n = len(adj_list)# Number of Vertices
+    state = ['U' for x in range(n)]# All Vertices Undiscovered
+    parent = [None for x in range(n)]# Parent array indicating parent[i]=p, i is the child vertex and p parent
+    state[start] = 'D'# Starting Node set to Discovered
+    return dfs_loop(adj_list, start, state, parent, stack)
+
+def dfs_loop(adj_list, u, state, parent, stack):
+    for v, w in adj_list[u]:# For each Vertex (v) connected to Vertex u (previous/starting Vertex)
+        if state[v] == 'U':# If v has not yet been Discovered             
+            state[v] = 'D'# Set v Discovered
+            parent[v] = u# Set v's parent as u
+            dfs_loop(adj_list, v, state, parent, stack)# Recursively traverse deeper to the children of v
+    stack.append(u)# Stack holds the traversal from the first deepest node to the next until reaching start
+    state[u] = 'P'# Set u to Processed
+    return state, parent, stack
+
+def bfs_tree(adj_list, start):
+    """
+    Breadth First Search Traversal of a graph, returns a parent array
+    """
+    n = len(adj_list)
+    state = ['U' for x in range(n)]
+    parent = [None for x in range(n)]
+    Q = deque()
+    state[start] = 'D'
+    Q.append(start)
+    return bfs_loop(adj_list, Q, state, parent)
+
+def bfs_loop(adj_list, Q, state, parent):
+    while len(Q) > 0:
+        u = Q.popleft()
+        for v, w in adj_list[u]:
+            if state[v] == 'U':
+                state[v] = 'D'
+                parent[v] = u
+                Q.append(v)
+        state[u] = 'P'
+    return parent
+
+
 def main():  
     graph_string = """\
     D 3
@@ -63,7 +122,9 @@ def main():
     """
     print(adjacency_matrix(graph_string) == [[None, 1, 1],[1,None, None],[None, None, None]])
     print(adjacency_list(graph_string) == [[(1, None), (2, None)], [(0, None)], []])
-
+    print(dfs_tree(adjacency_list(graph_string), 0, []) == (['P','P','P'],[None, 0, 0],[1,2,0]) )
+    print(bfs_tree(adjacency_list(graph_string), 0) == [None, 0, 0])
+    
     graph_string = """\
     D 3 W
     0 1 7
@@ -72,7 +133,9 @@ def main():
     """
     print(adjacency_matrix(graph_string) == [[None, 7, 0],[-2,None, None],[None, None, None]])
     print(adjacency_list(graph_string) == [[(1, 7), (2, 0)], [(0, -2)], []])
-
+    print(dfs_tree(adjacency_list(graph_string), 0, []) == (['P','P','P'],[None, 0, 0],[1,2,0]) )
+    print(bfs_tree(adjacency_list(graph_string), 0) == [None, 0, 0])
+    
     graph_string = """\
     U 7
     1 2
@@ -157,5 +220,6 @@ def main():
     
 if __name__ == '__main__':
     main()
+    
 
 

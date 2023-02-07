@@ -112,6 +112,25 @@ def bfs_loop(adj_list, Q, state, parent):
         state[u] = 'P'
     return parent
 
+def shortest_path(adj_list, s, t):
+    """
+    Generates a bfs parent array on the starting vertex
+        parent array can be traversed to find the shortest path to any other reachable vertex
+        if there is no path between s and t, [] is returned
+    """
+    parent = bfs_tree(adj_list, s)
+    path = _tree_path(parent, s, t) 
+    return path if path[0] != None else []
+
+def _tree_path(parent, s, t):
+    """
+    Returns the vertex order from s to t of a given parent array/tree
+    """
+    if t == None:# No path between s and t
+        return [None]
+    elif s == t:
+        return [s]
+    return _tree_path(parent, s, parent[t]) + [t]
 
 def main():  
     graph_string = """\
@@ -124,6 +143,9 @@ def main():
     print(adjacency_list(graph_string) == [[(1, None), (2, None)], [(0, None)], []])
     print(dfs_tree(adjacency_list(graph_string), 0, []) == (['P','P','P'],[None, 0, 0],[1,2,0]) )
     print(bfs_tree(adjacency_list(graph_string), 0) == [None, 0, 0])
+    print(shortest_path(adjacency_list(graph_string), 0, 1) == [0,1])
+    print(shortest_path(adjacency_list(graph_string), 1, 2) == [1,0,2])
+    print(shortest_path(adjacency_list(graph_string), 2, 1) == [])
     
     graph_string = """\
     D 3 W
@@ -135,6 +157,9 @@ def main():
     print(adjacency_list(graph_string) == [[(1, 7), (2, 0)], [(0, -2)], []])
     print(dfs_tree(adjacency_list(graph_string), 0, []) == (['P','P','P'],[None, 0, 0],[1,2,0]) )
     print(bfs_tree(adjacency_list(graph_string), 0) == [None, 0, 0])
+    print(shortest_path(adjacency_list(graph_string), 0, 1) == [0,1])
+    print(shortest_path(adjacency_list(graph_string), 1, 2) == [1,0,2])
+    print(shortest_path(adjacency_list(graph_string), 2, 1) == [])
     
     graph_string = """\
     U 7
@@ -162,7 +187,14 @@ def main():
      [(3, None), (5, None)],
      [(1, None), (2, None), (4, None)],
      [(1, None)]])
-
+    print(dfs_tree(adjacency_list(graph_string), 1, []) == (['U','P','P','P','P','P','P'],
+                                                            [None, None, 1, 2, 3, 4, 1],
+                                                            [5,4,3,2,6,1]) )
+    print(bfs_tree(adjacency_list(graph_string), 1) == [None, None, 1, 2, 5, 1, 1])
+    print(shortest_path(adjacency_list(graph_string), 1, 4) == [1,5,4])
+    print(shortest_path(adjacency_list(graph_string), 4, 1) == [4,5,1])
+    print(shortest_path(adjacency_list(graph_string), 4, 0) == [])
+    
     graph_string = """\
     U 7 W
     1 2 13

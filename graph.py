@@ -134,8 +134,8 @@ def _tree_path(parent, s, t):
 
 def connected_components(adj_list):
     """
-    Components of a graph are maximal sub-graphs in which all vertices are reachable from each other
-    Given a graph, returns a set of all maximal sub-graphs
+    Components of an undirected graph are maximal sub-graphs in which all vertices are reachable from each other
+    Given an undirected graph, returns a set of all maximal sub-graphs
     """
     n = len(adj_list)
     state = ['U' for x in range(n)]
@@ -155,7 +155,41 @@ def connected_components(adj_list):
             components.add(tuple(component))
     return components
 
-    
+def graph_transposed(adj_list):
+    """
+    Reverses all edges on the graph, note an undirected graph == its transpose
+    """
+    output = [[] for vertex in adj_list]
+    for src, edges in enumerate(adj_list):
+        for edge in edges:
+            dst, cost = edge[0], edge[1]
+            output[dst] += [(src, cost)]    
+    return output
+
+def strongly_connected(adj_list):
+    """
+    A directed graph is strongly connected if and only if there is a path between
+    every ordered pair of vertices (i.e. the graph has no maximal sub-graphs / connected components)
+
+    A simple way to test this is to run a bfs/dfs traversal on each vertex and confirm each traversal
+    was able to Process / reach all other vertices
+
+    This method compares a graph G to its tranpose G^T, where the transpose has all edges reversed
+    """
+    s = 0
+    # 1: Run a graph traversal (BFS or DFS) on G from a starting point s
+    state, parent, stack = dfs_tree(adj_list, s, [])
+    # 2: If any vertex remains undiscovered, return False
+    if 'U' in state:
+        return False
+    # 3: Construct the transpose
+    transpose = graph_transposed(adj_list)
+    # 4: Run a graph traversal (BFS or DFS) on G^T from a starting point s
+    state, parent, stack = dfs_tree(adj_list, s, [])
+    # 5: If any vertex remains undiscovered, return False, Else True
+    if 'U' in state:
+        return False
+    return True
 
 def main():  
     graph_string = """\
@@ -163,7 +197,7 @@ def main():
     0 1
     1 0
     0 2
-    """
+    """   
     print(adjacency_matrix(graph_string) == [[None, 1, 1],[1,None, None],[None, None, None]])
     print(adjacency_list(graph_string) == [[(1, None), (2, None)], [(0, None)], []])
     print(dfs_tree(adjacency_list(graph_string), 0, []) == (['P','P','P'],[None, 0, 0],[1,2,0]) )
@@ -172,7 +206,9 @@ def main():
     print(shortest_path(adjacency_list(graph_string), 1, 2) == [1,0,2])
     print(shortest_path(adjacency_list(graph_string), 2, 1) == [])
     print(connected_components(adjacency_list(graph_string)) == set([(0,1,2)]))
-    
+    print(graph_transposed(adjacency_list(graph_string)) == [[(1, None)], [(0, None)], [(0, None)]])
+    print(strongly_connected(adjacency_list(graph_string)) == True)
+          
     graph_string = """\
     D 3 W
     0 1 7
@@ -187,7 +223,9 @@ def main():
     print(shortest_path(adjacency_list(graph_string), 1, 2) == [1,0,2])
     print(shortest_path(adjacency_list(graph_string), 2, 1) == [])
     print(connected_components(adjacency_list(graph_string)) == set([(0,1,2)]))
-    
+    print(graph_transposed(adjacency_list(graph_string)) == [[(1, -2)], [(0, 7)], [(0, 0)]])
+    print(strongly_connected(adjacency_list(graph_string)) == True)
+          
     graph_string = """\
     U 7
     1 2
@@ -222,6 +260,14 @@ def main():
     print(shortest_path(adjacency_list(graph_string), 4, 1) == [4,5,1])
     print(shortest_path(adjacency_list(graph_string), 4, 0) == [])
     print(connected_components(adjacency_list(graph_string)) == set([(0,), (1,2,3,4,5,6)]))
+    print(graph_transposed(adjacency_list(graph_string)) == [
+     [],
+     [(2, None), (5, None), (6, None)],
+     [(1, None), (3, None), (5, None)],
+     [(2, None), (4, None)],
+     [(3, None), (5, None)],
+     [(1, None), (2, None), (4, None)],
+     [(1, None)]])
     
     graph_string = """\
     U 7 W
@@ -249,7 +295,38 @@ def main():
      [(3, 66), (5, 72)],
      [(1, 22), (2, 45), (4, 72)],
      [(1, 53)]])
-
+    print(connected_components(adjacency_list(graph_string)) == set([(0,), (1,2,3,4,5,6)]))
+    print(strongly_connected(adjacency_list(graph_string)) == False)
+    
+    graph_string = """\
+    D 7 W
+    1 2 13
+    1 5 22
+    1 6 53
+    2 3 42
+    2 5 45
+    3 4 66 
+    4 5 72
+    """
+    print(adjacency_matrix(graph_string) == [
+        [None, None, None, None, None, None, None],
+        [None, None, 13  , None, None, 22  , 53  ],
+        [None, None, None, 42  , None, 45  , None],
+        [None, None, None, None, 66  , None, None],
+        [None, None, None, None, None, 72  , None],
+        [None, None, None, None, None, None, None],
+        [None, None, None, None, None, None, None]])
+    print(adjacency_list(graph_string) == [
+     [],
+     [(2, 13), (5, 22), (6, 53)],
+     [(3, 42), (5, 45)],
+     [(4, 66)],
+     [(5, 72)],
+     [],
+     []])
+    print(connected_components(adjacency_list(graph_string)) == set([(0,), (1,2,3,4,5,6)]))
+    print(strongly_connected(adjacency_list(graph_string)) == False)
+    
     graph_string = """\
     U 17
     1 2

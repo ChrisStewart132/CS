@@ -132,6 +132,31 @@ def _tree_path(parent, s, t):
         return [s]
     return _tree_path(parent, s, parent[t]) + [t]
 
+def connected_components(adj_list):
+    """
+    Components of a graph are maximal sub-graphs in which all vertices are reachable from each other
+    Given a graph, returns a set of all maximal sub-graphs
+    """
+    n = len(adj_list)
+    state = ['U' for x in range(n)]
+    Q = deque()
+    components = set()
+    for i in range(n):
+        if state[i] == 'U':
+            prev_state = [x for x in state]
+            state[i] = 'D'
+            Q.append(i)
+            parent = [None for x in range(n)]
+            bfs_loop(adj_list, Q, state, parent)
+            component = []
+            for j in range(n):# see what vertices have changes
+                if prev_state[j] != state[j]:
+                    component.append(j)
+            components.add(tuple(component))
+    return components
+
+    
+
 def main():  
     graph_string = """\
     D 3
@@ -146,6 +171,7 @@ def main():
     print(shortest_path(adjacency_list(graph_string), 0, 1) == [0,1])
     print(shortest_path(adjacency_list(graph_string), 1, 2) == [1,0,2])
     print(shortest_path(adjacency_list(graph_string), 2, 1) == [])
+    print(connected_components(adjacency_list(graph_string)) == set([(0,1,2)]))
     
     graph_string = """\
     D 3 W
@@ -160,6 +186,7 @@ def main():
     print(shortest_path(adjacency_list(graph_string), 0, 1) == [0,1])
     print(shortest_path(adjacency_list(graph_string), 1, 2) == [1,0,2])
     print(shortest_path(adjacency_list(graph_string), 2, 1) == [])
+    print(connected_components(adjacency_list(graph_string)) == set([(0,1,2)]))
     
     graph_string = """\
     U 7
@@ -194,6 +221,7 @@ def main():
     print(shortest_path(adjacency_list(graph_string), 1, 4) == [1,5,4])
     print(shortest_path(adjacency_list(graph_string), 4, 1) == [4,5,1])
     print(shortest_path(adjacency_list(graph_string), 4, 0) == [])
+    print(connected_components(adjacency_list(graph_string)) == set([(0,), (1,2,3,4,5,6)]))
     
     graph_string = """\
     U 7 W
@@ -249,6 +277,19 @@ def main():
      [],
      [(1, None), (2, None)],
      []])
+    print(connected_components(adjacency_list(graph_string)) == set([(0,), (1,2,6,15), (3,),
+                                                                     (4,5,12,13),(7,),(8,),(9,),
+                                                                     (10,),(11,),(14,),(16,) ]))
+
+    graph_string = """\
+    U 6
+    3 0
+    2 5
+    1 0
+    1 3
+    """
+    print(connected_components(adjacency_list(graph_string)) == set([(0,1,3), (2,5), (4,)]))
+
     
 if __name__ == '__main__':
     main()

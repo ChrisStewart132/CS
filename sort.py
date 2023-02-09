@@ -296,6 +296,13 @@ def heap_sort(arr):
         output.append(h.pop_min())
     return output
 
+def heap_sort_iterative(arr):
+    h = heap.MinHeapIterative(arr)
+    output = []
+    while not h.isEmpty():
+        output.append(h.pop_min())
+    return output
+
 def tree_sort(arr):
     t = binary_search_tree.BinarySearchTree()
     for i in arr:
@@ -304,8 +311,9 @@ def tree_sort(arr):
 
 def main():
     in_place_sort_functions = [selection_sort, insertion_sort, shell_sort]
-    copy_sort_functions = [merge_sort_simple, merge_sort, quicksort, heap_sort, tree_sort]
-    function_names = ['selection_sort', 'insertion_sort', 'shell_sort', 'merge_sort_simple', 'merge_sort', 'quicksort', 'heap_sort', 'tree_sort']
+    copy_sort_functions = [merge_sort_simple, merge_sort, quicksort, heap_sort, heap_sort_iterative, tree_sort]
+    function_names = ['selection_sort', 'insertion_sort', 'shell_sort', 'merge_sort_simple', 'merge_sort', 'quicksort',
+                      'heap_sort', 'heap_sort_iterative', 'tree_sort']
     sorting_time = [0 for n in function_names]
     
     # random un-sorted array

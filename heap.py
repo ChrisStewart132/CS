@@ -12,10 +12,11 @@ class Heap(object):
         for item in items:
             self.insert(item)
 
-    def insert(self, item):
-        # don't implement here
-        # this is just a place holder
-        pass
+    def fast_heapify(self, items):
+        pass# not implemented here
+
+    def insert(self, item):       
+        pass# not implemented here
 
     def isEmpty(self):
         return len(self) == 0
@@ -86,16 +87,12 @@ class MinHeap(Heap):
         """
         # While the item at 'index' has at least one child...
         if (index * 2) <= len(self):
-            left = 2 * index
-            right = left + 1
-            smallest = left
-            try:
-                if self._items[left] < self._items[right]:
-                    smallest = left
-                else:
-                    smallest = right
-            except IndexError:
-                smallest = left
+            smallest = 2 * index
+            right = smallest + 1
+            
+            if right <= len(self) and self._items[smallest] > self._items[right]:
+                smallest = right
+                
             if self._items[index] > self._items[smallest]:
                 self._items[smallest], self._items[index] = self._items[index], self._items[smallest]
                 self._sift_down(smallest)
@@ -110,6 +107,144 @@ class MinHeap(Heap):
                 return False
         return True
 
+class MinHeapIterative(Heap):
+    """Implementation of a min-heap."""
+    def insert(self, item):
+        self._items.append(item)
+        self._sift_up(len(self._items) - 1)
+
+    def _sift_up(self, index):
+        """
+        Moves the item at the given index up through the heap until it finds
+        the correct place for it. That is, the item is moved up through the heap
+        while it is smaller than its parent.
+        """
+        parent = (index) // 2
+        while index > 1 and self._items[index] < self._items[parent]:
+            self._items[index], self._items[parent] = self._items[parent], self._items[index]
+            index = parent
+            parent = (index) // 2
+
+    def peek_min(self):
+        """
+        Returns the smallest item in the heap.
+        """
+        return self._items[1]
+
+    def pop_min(self):
+        """
+        Removes the smallest item in the heap and returns it. Returns None if
+        there are no items in the heap. Can be thought of as Popping the min
+        item off the heap.
+        """
+        if len(self._items) == 1:
+            return None
+        
+        self._items[1], self._items[-1] = self._items[-1], self._items[1]# swap root and last item
+        output = self._items.pop()
+        self._sift_down(1)
+        self._sift_down(1)
+        
+        return output
+
+    def _sift_down(self, index):
+        """
+        Moves an item at the given index down through the heap until it finds
+        the correct place for it. That is, when the item is moved up through the
+        heap while it is larger than either of its children.
+        """
+        # While the item at 'index' has at least one child...
+        while (index * 2) <= len(self):
+            smallest = 2 * index
+            right = smallest + 1
+            
+            if right <= len(self) and self._items[smallest] > self._items[right]:
+                smallest = right
+                
+            if self._items[index] > self._items[smallest]:
+                self._items[smallest], self._items[index] = self._items[index], self._items[smallest]
+                index = smallest
+            else:
+                break
+
+    def validate(self):
+        """
+        Validates the heap by ensuring each node is greater than its parent.
+        Returns True if the heap is a valid min-heap, and False otherwise.
+        """
+        for i in range(2,len(self._items)):
+            if self._items[i] < self._items[i//2]:
+                return False
+        return True
+
+
+class MaxHeapIterative(Heap):
+    """Implementation of a min-heap."""
+    def insert(self, item):
+        self._items.append(item)
+        self._sift_up(len(self._items) - 1)
+
+    def _sift_up(self, index):
+        """
+        Moves the item at the given index up through the heap until it finds
+        the correct place for it.
+        """
+        parent = (index) // 2
+        while index > 1 and self._items[index] > self._items[parent]:
+            self._items[index], self._items[parent] = self._items[parent], self._items[index]
+            index = parent
+            parent = (index) // 2
+
+    def peek_max(self):
+        """
+        Returns the largest item in the heap.
+        """
+        return self._items[1]
+
+    def pop_max(self):
+        """
+        Removes the largest item in the heap and returns it. Returns None if
+        there are no items in the heap. Can be thought of as Popping the max
+        item off the heap.
+        """
+        if len(self._items) == 1:
+            return None
+        
+        self._items[1], self._items[-1] = self._items[-1], self._items[1]# swap root and last item
+        output = self._items.pop()
+        self._sift_down(1)
+        self._sift_down(1)
+        
+        return output
+
+    def _sift_down(self, index):
+        """
+        Moves an item at the given index down through the heap until it finds
+        the correct place for it.
+        """
+        # While the item at 'index' has at least one child...
+        while (index * 2) <= len(self):
+            largest = 2 * index
+            right = largest + 1
+            
+            if right <= len(self) and self._items[largest] < self._items[right]:
+                largest = right
+                
+            if self._items[index] < self._items[largest]:
+                self._items[largest], self._items[index] = self._items[index], self._items[largest]
+                index = largest
+            else:
+                break
+
+    def validate(self):
+        """
+        Validates the heap by ensuring each node is smaller than its parent.
+        Returns True if the heap is a valid min-heap, and False otherwise.
+        """
+        for i in range(2,len(self._items)):
+            if self._items[i] > self._items[i//2]:
+                return False
+        return True
 
 class Max_3_Heap(Heap):
     """Implementation of a max-three-heap.
@@ -143,8 +278,6 @@ class Max_3_Heap(Heap):
         if index > 1 and self._items[parent_index] < self._items[index]:
             self._items[parent_index], self._items[index] = self._items[index], self._items[parent_index]
             self._sift_up(parent_index)
-
-
 
     def peek_max(self):
         """
@@ -208,18 +341,23 @@ class Max_3_Heap(Heap):
 def main():
     import random
     min_heap = MinHeap()
+    min_heap_iterative = MinHeapIterative()
+    max_heap_iterative = MaxHeapIterative()
     max_heap = Max_3_Heap()
     x = [random.randint(-2**8,2**8) for i in range(20)]
-    # insert random integers into the heap
+    
+    # insert random integers into the heap(s)
     for n in x:
         min_heap.insert(n)
-        if not min_heap.validate():
-            print("min_heap error1")
+        min_heap_iterative.insert(n)
+        if not min_heap.validate() or not min_heap_iterative.validate():
+            print("min_heap(s) error1")
             return -1
         
         max_heap.insert(n)
-        if not max_heap.validate():
-            print("max_heap error1")
+        max_heap_iterative.insert(n)
+        if not max_heap.validate() or not max_heap_iterative.validate():
+            print("max_heap(s) error1")
             return -1
 
     # confirm that the heap pops in the correct order
@@ -229,18 +367,31 @@ def main():
             print("min_heap error2")
             return -1
         sorted_min_heap.append(min_heap.pop_min())
-
     print("min heap:", sorted_min_heap == sorted(x))
+
+    sorted_min_heap = []
+    while not min_heap_iterative.isEmpty():
+        if not min_heap_iterative.validate():
+            print("min_heap_iterative error2")
+            return -1
+        sorted_min_heap.append(min_heap_iterative.pop_min())
+    print("min heap iterative:", sorted_min_heap == sorted(x))
     
     sorted_max_heap = []
     while not max_heap.isEmpty():
         if not max_heap.validate():
             print("max_heap error2")
             return -1
-        sorted_max_heap.append(max_heap.pop_max())
-
-    
+        sorted_max_heap.append(max_heap.pop_max())  
     print("max heap:", sorted_max_heap == sorted(x, reverse=True))
+
+    sorted_max_heap = []
+    while not max_heap_iterative.isEmpty():
+        if not max_heap_iterative.validate():
+            print("max_heap_iterative error2")
+            return -1
+        sorted_max_heap.append(max_heap_iterative.pop_max())  
+    print("max heap iterative:", sorted_max_heap == sorted(x, reverse=True))
 
 
 if __name__ == '__main__':

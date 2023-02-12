@@ -191,6 +191,154 @@ def strongly_connected(adj_list):
         return False
     return True
 
+def topological_sorting(adj_list):
+    """
+    A topological ordering of a directed graph is an ordering of its vertices, such
+    that, if there is an edge (u, v) in the graph, then vertex u is placed in some
+    position before vertex v. Any Directed Acyclic Graph (DAG) has at least one
+    topological ordering.
+
+    The following includes some examples of topological sorting on DAGs.
+    
+        • In software engineering, build automation systems (e.g. Make and Apache
+        Maven) apply topological sort to the DAG of dependencies between soft-
+        ware components to find a valid order of building software.
+        
+        • Package management systems (e.g. dpkg, RPM, and Homebrew) apply
+        topological sort to the DAG of package dependencies to find a valid
+        order of installation.
+        
+        • A prerequisite graph of courses at a university is a DAG. A topological
+        ordering allows doing courses in some valid order.
+        
+        • Copying relational databases must be done according to a topological
+        ordering of tables (where dependencies are based on foreign keys) so that
+        the referential integrity of the data is maintained during the operation.
+    """
+    return
+
+def cycle_detection(adj_list):
+    """
+    Sometimes we want to know if a graph has a cycle. This is, for example, useful
+    to determine whether a directed graph is a DAG, and thus, has a topological
+    ordering.
+
+    During DFS traversal, when examining the outgoing edges of a vertex u, if
+    the edge (u, v) goes to a vertex v that is already discovered (that is, it is on
+    the call stack), then the graph has a cycle.
+
+    For undirected graphs, the process is similar, but there is one exception: when
+    examining the outgoing edges of a vertex u, we ignore the edge (u, v) where v
+    is the parent of u (v is guaranteed to be discovered but that doesn’t count as
+    a cycle because a cycle has to be a path, and a path is not allowed to use an
+    edge more than once).
+
+    For undirected graphs with multiple components, or for directed graphs, mul-
+    tiple DFS calls may need to be made in order to find a cycle. Therefore,
+    similar to finding the components of a graph or topological ordering, a for
+    loop must check the state of each vertex in the graph, and run a DFS from
+    that vertex if it is undiscovered.
+    """
+    return
+
+def next_vertex(in_tree, distance):
+    """
+    Function used by the prim mst and dijkstra algorithms.
+    Given a distance array, finds the next un-discovered vertex with the lowest cost.
+    """
+    n = None
+    for i, vertex in enumerate(in_tree):
+        # vertex not reached yet, and (init or lower cost vertex found)
+        if not vertex and (n == None or distance[i] < distance[n]):
+            n = i
+    return n
+
+def prim(adj_list, s=0):
+    """
+    A spanning tree of an undirected graph is a subgraph that is a tree and includes
+    all the vertices of the graph. A minimum spanning tree (MST) of a weighted
+    undirected graph is a spanning tree that has the lowest total weight among all
+    other spanning trees.
+
+    Given a weighted undirected graph with one component, Prim’s algorithm
+    finds a minimum spanning tree. The algorithm is called with an arbitrary
+    vertex as the starting point which forms a one-vertex tree. The tree gradually
+    grows in each iteration by adding the smallest edge between a vertex that is
+    part of the tree and a vertex that is not.
+    """
+    n = len(adj_list)
+    in_tree = [False for x in range(n)]
+    distance = [float('inf') for x in range(n)]
+    parent = [None for x in range(n)]
+    distance[s] = 0
+    while not all(in_tree):
+        u = next_vertex(in_tree, distance)
+        in_tree[u] = True       
+        for v, weight in adj_list[u]:
+            if not in_tree[v] and weight < distance[v]:
+                distance[v] = weight
+                parent[v] = u
+    return parent, distance
+
+def dijkstra(adj_list, s=0):
+    """
+    Given a graph with non-negative edge weights and a starting vertex, the al-
+    gorithm finds the shortest path from the starting vertex to any other vertex
+    reachable from it.
+    
+    The algorithm gradually grows a shortest path tree rooted at the starting
+    vertex. In each iteration, a new edge is added to the tree by selecting an edge
+    that connects a vertex in the tree to a vertex outside that is closest to the
+    starting vertex.
+    """
+    n = len(adj_list)
+    in_tree = [False for x in range(n)]
+    distance = [float('inf') for x in range(n)]
+    parent = [None for x in range(n)]
+    distance[s] = 0
+    while not all(in_tree):
+        u = next_vertex(in_tree, distance)
+        in_tree[u] = True
+        for v, weight in adj_list[u]:
+            if not in_tree[v] and (distance[u] + weight) < distance[v]:
+                distance[v] = distance[u] + weight
+                parent[v] = u
+    return parent, distance
+
+def weighted_mst_path(adj_list, s, t):
+    """
+    Generates a minimum spanning tree/parent, distance array on the starting vertex
+        parent, distance arrays are traversed to find the shortest path to any other reachable vertex
+        if there is no path between s and t, [] is returned
+
+        path[2] = (vertex, cost_from_prev_vertex)
+    """
+    parent, distance = prim(adj_list, s)
+    path = _weighted_tree_path(parent, distance, s, t)
+    return path if path[0][0] != None else []
+
+def weighted_shortest_path(adj_list, s, t):
+    """
+    Generates a Dijkstra parent, distance array on the starting vertex
+        parent, distance arrays are traversed to find the shortest path to any other reachable vertex
+        if there is no path between s and t, [] is returned
+
+        path[2] = (vertex, cost_from_starting_vertex)
+    """
+    parent, distance = dijkstra(adj_list, s)
+    path = _weighted_tree_path(parent, distance, s, t)
+    return path if path[0][0] != None else []
+
+def _weighted_tree_path(parent, distance, s, t):
+    """
+    Returns the (vertex, total_cost) order from s to t of a given parent array/tree
+    """
+    if t == None:# No path between s and t
+        return [(None, None)]
+    elif s == t:
+        return [(s, 0)]
+    return _weighted_tree_path(parent, distance, s, parent[t]) + [(t, distance[t])]   
+
 def main():  
     graph_string = """\
     D 3
@@ -366,6 +514,27 @@ def main():
     1 3
     """
     print(connected_components(adjacency_list(graph_string)) == set([(0,1,3), (2,5), (4,)]))
+
+    graph_string = """\
+    U 7 W
+    0 1 5
+    0 2 7
+    0 3 12
+    1 2 9
+    2 3 4
+    1 4 7
+    2 4 4
+    2 5 3
+    3 5 7
+    4 5 2
+    4 6 5
+    5 6 2
+    """
+    print(prim(adjacency_list(graph_string)) == ([None, 0, 0, 2, 5, 2, 5], [0, 5, 7, 4, 2, 3, 2]))
+    print(dijkstra(adjacency_list(graph_string)) == ([None, 0, 0, 2, 2, 2, 5], [0, 5, 7,11,11,10,12]))
+    print(shortest_path(adjacency_list(graph_string), 0, 4) == [0, 1, 4])# path with least vertices traversed (optimised for less vertex/city visits)
+    print(weighted_mst_path(adjacency_list(graph_string), 0, 4) == [(0, 0), (2, 7), (5, 3), (4, 2)])# path on a MST (optimised for network/roads)
+    print(weighted_shortest_path(adjacency_list(graph_string), 0, 4) == [(0, 0), (2, 7), (4, 11)])# lowest cost path (optimised for traveller)
 
     
 if __name__ == '__main__':

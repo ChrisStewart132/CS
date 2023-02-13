@@ -20,6 +20,18 @@ after a bfs traversal of example_graph_string starting from vertex 0
     the parents of vertex 1 and 2 are vertex 0
 """
 
+"""
+Aspect                                      Adj matrix   Adj list                  Comment
+Determine whether there is an edge
+    (i, j) in the graph:                        Θ(1)       O(n)                     matrix[i][j]!= None vs (j,cost) in adj_list[i]
+Adding an edge:                                 Θ(1)       O(n)                     matrix[i][j] = cost vs adj_list[i]+=(j,cost) if not in adj_list[i]
+Deleting an edge:                               Θ(1)       O(n)                     matrix[i][j] = None vs adj_list[i][?] = None
+Iterating over edges from a given vertex:       Θ(n)       O(n)                     matrix[i] vs adj_list[i] note for adj_list could be 0<->n edges               
+Iterating over all edges:                       Θ(n2)      Θ(n + m)=Θ(max(n, m))    n*n vs n*(0<->n)
+Space:                                          Θ(n2)      Θ(n + m)=Θ(max(n, m))    n*n vs n*(0<->n)
+
+where n = number of vertices, m = total number of edges
+"""
 def adjacency_matrix(graph_str):
     """
     converts a graph_str to a list of costs to all other vertices in the graph (None if no edge exists)
@@ -62,7 +74,7 @@ def adjacency_list(graph_str):
     
     return output
 
-def dfs_tree(adj_list, start, stack, state=None, parent=None):
+def dfs_tree(adj_list, start, state=None, parent=None, stack=None):
     """
     Depth First Search Traversal of a graph, returns state, parent, stack
         State:
@@ -72,19 +84,25 @@ def dfs_tree(adj_list, start, stack, state=None, parent=None):
             An array where index i represents Vertex i and parent[i] is its direct parent Vertex
         Stack:
             Traversal from the first deepest Vertex to the next deepest, to the start
-    """
+    """      
     n = len(adj_list)# Number of Vertices
-    state = ['U' for x in range(n)]# All Vertices Undiscovered
-    parent = [None for x in range(n)]# Parent array indicating parent[i]=p, i is the child vertex and p parent
+    state = state if state else ['U' for x in range(n)]# All Vertices Undiscovered
+    parent = parent if parent else [None for x in range(n)]# Parent array indicating parent[i]=p, i is the child vertex and p parent
+    stack = stack if stack else []
     state[start] = 'D'# Starting Node set to Discovered
     return dfs_loop(adj_list, start, state, parent, stack)
 
-def dfs_loop(adj_list, u, state, parent, stack):
+def dfs_loop(adj_list, u, state, parent, stack, cycle_detection=False, cycle_type="D"):
     for v, w in adj_list[u]:# For each Vertex (v) connected to Vertex u (previous/starting Vertex)
         if state[v] == 'U':# If v has not yet been Discovered             
             state[v] = 'D'# Set v Discovered
             parent[v] = u# Set v's parent as u
-            dfs_loop(adj_list, v, state, parent, stack)# Recursively traverse deeper to the children of v
+            dfs_loop(adj_list, v, state, parent, stack, cycle_detection, cycle_type)# Recursively traverse deeper to the children of v
+        elif cycle_detection and state[v] == 'D':# cycle detected
+            if cycle_type == "D":
+                stack.append("cycle")
+            elif cycle_type == "U" and parent[u] != v:# for U graphs ignore when v is parent of u
+                stack.append("cycle")
     stack.append(u)# Stack holds the traversal from the first deepest node to the next until reaching start
     state[u] = 'P'# Set u to Processed
     return state, parent, stack
@@ -193,6 +211,8 @@ def strongly_connected(adj_list):
 
 def topological_sorting(adj_list):
     """
+    Returns a stack containing a topological sorting in reverse order
+    
     A topological ordering of a directed graph is an ordering of its vertices, such
     that, if there is an edge (u, v) in the graph, then vertex u is placed in some
     position before vertex v. Any Directed Acyclic Graph (DAG) has at least one
@@ -215,9 +235,17 @@ def topological_sorting(adj_list):
         ordering of tables (where dependencies are based on foreign keys) so that
         the referential integrity of the data is maintained during the operation.
     """
-    return
+    n = len(adj_list)
+    state = ['U' for x in range(n)]
+    parent = [None for x in range(n)]
+    stack = []
+    for i in range(n):
+        if state[i] == 'U':# dfs search on un-discovered vertices
+            dfs_loop(adj_list, i, state, parent, stack)
 
-def cycle_detection(adj_list):
+    return stack# returns the stack representing a topological sorting in reverse order
+
+def cycle_detection(adj_list, graph_type="D"):
     """
     Sometimes we want to know if a graph has a cycle. This is, for example, useful
     to determine whether a directed graph is a DAG, and thus, has a topological
@@ -239,7 +267,16 @@ def cycle_detection(adj_list):
     loop must check the state of each vertex in the graph, and run a DFS from
     that vertex if it is undiscovered.
     """
-    return
+    n = len(adj_list)
+    state = ['U' for x in range(n)]
+    parent = [None for x in range(n)]
+    stack = []
+    for i in range(n):
+        if state[i] == 'U':
+            state, parent, stack = dfs_loop(adj_list, i, state, parent, state, True, graph_type)
+            if "cycle" in stack:
+                return True
+    return False
 
 def next_vertex(in_tree, distance):
     """
@@ -339,41 +376,46 @@ def _weighted_tree_path(parent, distance, s, t):
         return [(s, 0)]
     return _weighted_tree_path(parent, distance, s, parent[t]) + [(t, distance[t])]   
 
-def main():  
+def main():
+    tests = []
     graph_string = """\
     D 3
     0 1
     1 0
     0 2
-    """   
-    print(adjacency_matrix(graph_string) == [[None, 1, 1],[1,None, None],[None, None, None]])
-    print(adjacency_list(graph_string) == [[(1, None), (2, None)], [(0, None)], []])
-    print(dfs_tree(adjacency_list(graph_string), 0, []) == (['P','P','P'],[None, 0, 0],[1,2,0]) )
-    print(bfs_tree(adjacency_list(graph_string), 0) == [None, 0, 0])
-    print(shortest_path(adjacency_list(graph_string), 0, 1) == [0,1])
-    print(shortest_path(adjacency_list(graph_string), 1, 2) == [1,0,2])
-    print(shortest_path(adjacency_list(graph_string), 2, 1) == [])
-    print(connected_components(adjacency_list(graph_string)) == set([(0,1,2)]))
-    print(graph_transposed(adjacency_list(graph_string)) == [[(1, None)], [(0, None)], [(0, None)]])
-    print(strongly_connected(adjacency_list(graph_string)) == True)
-          
+    """  
+    tests.append(adjacency_matrix(graph_string) == [[None, 1, 1],[1,None, None],[None, None, None]])
+    tests.append(adjacency_list(graph_string) == [[(1, None), (2, None)], [(0, None)], []])
+    tests.append(dfs_tree(adjacency_list(graph_string), 0, []) == (['P','P','P'],[None, 0, 0],[1,2,0]) )
+    tests.append(bfs_tree(adjacency_list(graph_string), 0) == [None, 0, 0])
+    tests.append(shortest_path(adjacency_list(graph_string), 0, 1) == [0,1])
+    tests.append(shortest_path(adjacency_list(graph_string), 1, 2) == [1,0,2])
+    tests.append(shortest_path(adjacency_list(graph_string), 2, 1) == [])
+    tests.append(connected_components(adjacency_list(graph_string)) == set([(0,1,2)]))
+    tests.append(graph_transposed(adjacency_list(graph_string)) == [[(1, None)], [(0, None)], [(0, None)]])
+    tests.append(strongly_connected(adjacency_list(graph_string)) == True)
+    print(all(tests), tests)
+
+    tests = []
     graph_string = """\
     D 3 W
     0 1 7
     1 0 -2
     0 2 0
     """
-    print(adjacency_matrix(graph_string) == [[None, 7, 0],[-2,None, None],[None, None, None]])
-    print(adjacency_list(graph_string) == [[(1, 7), (2, 0)], [(0, -2)], []])
-    print(dfs_tree(adjacency_list(graph_string), 0, []) == (['P','P','P'],[None, 0, 0],[1,2,0]) )
-    print(bfs_tree(adjacency_list(graph_string), 0) == [None, 0, 0])
-    print(shortest_path(adjacency_list(graph_string), 0, 1) == [0,1])
-    print(shortest_path(adjacency_list(graph_string), 1, 2) == [1,0,2])
-    print(shortest_path(adjacency_list(graph_string), 2, 1) == [])
-    print(connected_components(adjacency_list(graph_string)) == set([(0,1,2)]))
-    print(graph_transposed(adjacency_list(graph_string)) == [[(1, -2)], [(0, 7)], [(0, 0)]])
-    print(strongly_connected(adjacency_list(graph_string)) == True)
-          
+    tests.append(adjacency_matrix(graph_string) == [[None, 7, 0],[-2,None, None],[None, None, None]])
+    tests.append(adjacency_list(graph_string) == [[(1, 7), (2, 0)], [(0, -2)], []])
+    tests.append(dfs_tree(adjacency_list(graph_string), 0, []) == (['P','P','P'],[None, 0, 0],[1,2,0]) )
+    tests.append(bfs_tree(adjacency_list(graph_string), 0) == [None, 0, 0])
+    tests.append(shortest_path(adjacency_list(graph_string), 0, 1) == [0,1])
+    tests.append(shortest_path(adjacency_list(graph_string), 1, 2) == [1,0,2])
+    tests.append(shortest_path(adjacency_list(graph_string), 2, 1) == [])
+    tests.append(connected_components(adjacency_list(graph_string)) == set([(0,1,2)]))
+    tests.append(graph_transposed(adjacency_list(graph_string)) == [[(1, -2)], [(0, 7)], [(0, 0)]])
+    tests.append(strongly_connected(adjacency_list(graph_string)) == True)
+    print(all(tests), tests)
+
+    tests = []
     graph_string = """\
     U 7
     1 2
@@ -384,7 +426,7 @@ def main():
     3 4
     4 5
     """
-    print(adjacency_matrix(graph_string) == [
+    tests.append(adjacency_matrix(graph_string) == [
         [None, None, None, None, None, None, None],
         [None, None, 1, None, None, 1, 1],
         [None, 1, None, 1, None, 1, None],
@@ -392,7 +434,7 @@ def main():
         [None, None, None, 1, None, 1, None],
         [None, 1, 1, None, 1, None, None],
         [None, 1, None, None, None, None, None]])
-    print(adjacency_list(graph_string) == [
+    tests.append(adjacency_list(graph_string) == [
      [],
      [(2, None), (5, None), (6, None)],
      [(1, None), (3, None), (5, None)],
@@ -400,15 +442,15 @@ def main():
      [(3, None), (5, None)],
      [(1, None), (2, None), (4, None)],
      [(1, None)]])
-    print(dfs_tree(adjacency_list(graph_string), 1, []) == (['U','P','P','P','P','P','P'],
+    tests.append(dfs_tree(adjacency_list(graph_string), 1, []) == (['U','P','P','P','P','P','P'],
                                                             [None, None, 1, 2, 3, 4, 1],
                                                             [5,4,3,2,6,1]) )
-    print(bfs_tree(adjacency_list(graph_string), 1) == [None, None, 1, 2, 5, 1, 1])
-    print(shortest_path(adjacency_list(graph_string), 1, 4) == [1,5,4])
-    print(shortest_path(adjacency_list(graph_string), 4, 1) == [4,5,1])
-    print(shortest_path(adjacency_list(graph_string), 4, 0) == [])
-    print(connected_components(adjacency_list(graph_string)) == set([(0,), (1,2,3,4,5,6)]))
-    print(graph_transposed(adjacency_list(graph_string)) == [
+    tests.append(bfs_tree(adjacency_list(graph_string), 1) == [None, None, 1, 2, 5, 1, 1])
+    tests.append(shortest_path(adjacency_list(graph_string), 1, 4) == [1,5,4])
+    tests.append(shortest_path(adjacency_list(graph_string), 4, 1) == [4,5,1])
+    tests.append(shortest_path(adjacency_list(graph_string), 4, 0) == [])
+    tests.append(connected_components(adjacency_list(graph_string)) == set([(0,), (1,2,3,4,5,6)]))
+    tests.append(graph_transposed(adjacency_list(graph_string)) == [
      [],
      [(2, None), (5, None), (6, None)],
      [(1, None), (3, None), (5, None)],
@@ -416,7 +458,10 @@ def main():
      [(3, None), (5, None)],
      [(1, None), (2, None), (4, None)],
      [(1, None)]])
-    
+    tests.append(cycle_detection(adjacency_list(graph_string), "U"))
+    print(all(tests), tests)  
+
+    tests = []
     graph_string = """\
     U 7 W
     1 2 13
@@ -427,7 +472,7 @@ def main():
     3 4 66 
     4 5 72
     """
-    print(adjacency_matrix(graph_string) == [
+    tests.append(adjacency_matrix(graph_string) == [
         [None, None, None, None, None, None, None],
         [None, None, 13  , None, None, 22  , 53  ],
         [None, 13  , None, 42  , None, 45  , None],
@@ -435,7 +480,7 @@ def main():
         [None, None, None, 66  , None, 72  , None],
         [None, 22  , 45  , None, 72  , None, None],
         [None, 53  , None, None, None, None, None]])
-    print(adjacency_list(graph_string) == [
+    tests.append(adjacency_list(graph_string) == [
      [],
      [(2, 13), (5, 22), (6, 53)],
      [(1, 13), (3, 42), (5, 45)],
@@ -443,9 +488,11 @@ def main():
      [(3, 66), (5, 72)],
      [(1, 22), (2, 45), (4, 72)],
      [(1, 53)]])
-    print(connected_components(adjacency_list(graph_string)) == set([(0,), (1,2,3,4,5,6)]))
-    print(strongly_connected(adjacency_list(graph_string)) == False)
-    
+    tests.append(connected_components(adjacency_list(graph_string)) == set([(0,), (1,2,3,4,5,6)]))
+    tests.append(strongly_connected(adjacency_list(graph_string)) == False)
+    print(all(tests), tests)
+
+    tests = []
     graph_string = """\
     D 7 W
     1 2 13
@@ -456,7 +503,7 @@ def main():
     3 4 66 
     4 5 72
     """
-    print(adjacency_matrix(graph_string) == [
+    tests.append(adjacency_matrix(graph_string) == [
         [None, None, None, None, None, None, None],
         [None, None, 13  , None, None, 22  , 53  ],
         [None, None, None, 42  , None, 45  , None],
@@ -464,7 +511,7 @@ def main():
         [None, None, None, None, None, 72  , None],
         [None, None, None, None, None, None, None],
         [None, None, None, None, None, None, None]])
-    print(adjacency_list(graph_string) == [
+    tests.append(adjacency_list(graph_string) == [
      [],
      [(2, 13), (5, 22), (6, 53)],
      [(3, 42), (5, 45)],
@@ -472,9 +519,11 @@ def main():
      [(5, 72)],
      [],
      []])
-    print(connected_components(adjacency_list(graph_string)) == set([(0,), (1,2,3,4,5,6)]))
-    print(strongly_connected(adjacency_list(graph_string)) == False)
-    
+    tests.append(connected_components(adjacency_list(graph_string)) == set([(0,), (1,2,3,4,5,6)]))
+    tests.append(strongly_connected(adjacency_list(graph_string)) == False)
+    print(all(tests), tests)
+
+    tests = []
     graph_string = """\
     U 17
     1 2
@@ -485,7 +534,7 @@ def main():
     13 4
     4 5
     """
-    print(adjacency_list(graph_string) == [[],
+    tests.append(adjacency_list(graph_string) == [[],
      [(2, None), (15, None), (6, None)],
      [(1, None), (15, None)],
      [],
@@ -502,10 +551,12 @@ def main():
      [],
      [(1, None), (2, None)],
      []])
-    print(connected_components(adjacency_list(graph_string)) == set([(0,), (1,2,6,15), (3,),
+    tests.append(connected_components(adjacency_list(graph_string)) == set([(0,), (1,2,6,15), (3,),
                                                                      (4,5,12,13),(7,),(8,),(9,),
                                                                      (10,),(11,),(14,),(16,) ]))
+    print(all(tests), tests)
 
+    tests = []
     graph_string = """\
     U 6
     3 0
@@ -513,8 +564,81 @@ def main():
     1 0
     1 3
     """
-    print(connected_components(adjacency_list(graph_string)) == set([(0,1,3), (2,5), (4,)]))
+    tests.append(connected_components(adjacency_list(graph_string)) == set([(0,1,3), (2,5), (4,)]))
+    print(all(tests), tests)
 
+    tests = []
+    graph_string = """\
+    D 7
+    0 3
+    4 0
+    5 3
+    3 2
+    4 5
+    """
+    tests.append(topological_sorting(adjacency_list(graph_string)) == [2,3,0,1,5,4,6])
+    tests.append(cycle_detection(adjacency_list(graph_string)) == False)
+    print(all(tests), tests)
+
+    tests = []
+    graph_string = """\
+    D 2
+    0 1
+    1 0
+    """
+    tests.append(cycle_detection(adjacency_list(graph_string)))
+    graph_string = """\
+    D 3
+    0 1
+    1 2
+    2 0
+    """
+    tests.append(cycle_detection(adjacency_list(graph_string)))
+    graph_string = """\
+    D 5
+    0 1
+    1 2
+    2 3
+    3 4
+    3 1
+    """
+    tests.append(cycle_detection(adjacency_list(graph_string)))
+    graph_string = """\
+    D 6
+    0 1
+    1 2
+    2 3
+    4 5
+    5 4
+    """
+    tests.append(cycle_detection(adjacency_list(graph_string)))
+    graph_string = """\
+    U 6
+    0 1
+    1 2
+    2 3
+    3 4
+    4 1
+    4 5
+    """
+    tests.append(cycle_detection(adjacency_list(graph_string), "U"))
+    graph_string = """\
+    U 6
+    0 1
+    1 2
+    2 3
+    4 5
+    5 4
+    """
+    tests.append(cycle_detection(adjacency_list(graph_string), "U") == False)
+    graph_string = """\
+    U 2
+    0 1
+    """
+    tests.append(cycle_detection(adjacency_list(graph_string), "U") == False)
+    print(all(tests), tests)
+
+    tests = []
     graph_string = """\
     U 7 W
     0 1 5
@@ -530,13 +654,16 @@ def main():
     4 6 5
     5 6 2
     """
-    print(prim(adjacency_list(graph_string)) == ([None, 0, 0, 2, 5, 2, 5], [0, 5, 7, 4, 2, 3, 2]))
-    print(dijkstra(adjacency_list(graph_string)) == ([None, 0, 0, 2, 2, 2, 5], [0, 5, 7,11,11,10,12]))
-    print(shortest_path(adjacency_list(graph_string), 0, 4) == [0, 1, 4])# path with least vertices traversed (optimised for less vertex/city visits)
-    print(weighted_mst_path(adjacency_list(graph_string), 0, 4) == [(0, 0), (2, 7), (5, 3), (4, 2)])# path on a MST (optimised for network/roads)
-    print(weighted_shortest_path(adjacency_list(graph_string), 0, 4) == [(0, 0), (2, 7), (4, 11)])# lowest cost path (optimised for traveller)
-
-    
+    tests.append(prim(adjacency_list(graph_string)) == ([None, 0, 0, 2, 5, 2, 5], [0, 5, 7, 4, 2, 3, 2]))
+    tests.append(dijkstra(adjacency_list(graph_string)) == ([None, 0, 0, 2, 2, 2, 5], [0, 5, 7,11,11,10,12]))
+    tests.append(shortest_path(adjacency_list(graph_string), 0, 4) == [0, 1, 4])# path with least vertices traversed (optimised for less vertex/city visits)
+    tests.append(weighted_mst_path(adjacency_list(graph_string), 0, 4) == [(0, 0), (2, 7), (5, 3), (4, 2)])# path on a MST (optimised for network/roads)
+    tests.append(sum([x[1] for x in weighted_mst_path(adjacency_list(graph_string), 0, 4)]) == 0+7+3+2)# cost of the MST path from 0->4
+    tests.append(weighted_shortest_path(adjacency_list(graph_string), 0, 4) == [(0, 0), (2, 7), (4, 11)])# lowest cost path (optimised for traveller)
+    tests.append(weighted_shortest_path(adjacency_list(graph_string), 0, 4)[-1][1] == 11)# cost of the shortest path from 0->4
+    tests.append(cycle_detection(adjacency_list(graph_string), "U"))
+    print(all(tests), tests)
+        
 if __name__ == '__main__':
     main()
     

@@ -309,11 +309,51 @@ def tree_sort(arr):
         t.insert(i)
     return t.in_order_items_with_duplicates()
 
+def counting_sort(arr, key=lambda x:x**2):
+    """
+    Uses the positions obtained in the first stage to place the elements of
+    the input at the right position in the output array
+    """    
+    smallest = min(arr)# to allow for sorting negative values
+    arr_copy = [a-smallest for a in arr] if smallest < 0 else arr
+
+    output = [0 for x in arr_copy]# output sorted array
+    P = key_positions(arr_copy, key)
+    for a in arr_copy:
+        output[P[key(a)]] = a+smallest# places a in the correct position     
+        P[key(a)] = P[key(a)] + 1
+    return output
+
+def key_positions(arr, key):
+    """
+    O(max(k,n)) where n = len(arr), k = largest key value output from a in arr
+    Counts the number of times each key value occurs in the input array
+    and uses this information to compute the position of objects with that
+    key in the output (sorted array). Returns an array of positions len(k+1)
+    """
+    k = max([key(a) for a in arr])# largest key function result from all a in arr
+    C = [0 for x in range(k+1)]# arr from 0->largest key function returned+1
+    for a in arr:
+        C[key(a)] = C[key(a)] + 1# counts a in arr who have same key output
+    total = 0
+    for i in range(k+1):
+        C[i], total = total, total + C[i]# computes a running sum over C
+    return C# C[i] is the number of elements whose key value is less than i
+
+def radix_sort(arr, d=3):
+    """
+    sorts arr based on its digits using a stable sort (counting sort)
+    d=3 used as default
+    """
+    for i in range(1, d+1):
+        arr = counting_sort(arr, lambda x:x%pow(10,i))
+    return arr
+    
 def main():
     in_place_sort_functions = [selection_sort, insertion_sort, shell_sort]
-    copy_sort_functions = [merge_sort_simple, merge_sort, quicksort, heap_sort, heap_sort_iterative, tree_sort]
+    copy_sort_functions = [merge_sort_simple, merge_sort, quicksort, heap_sort, heap_sort_iterative, tree_sort, counting_sort, radix_sort]
     function_names = ['selection_sort', 'insertion_sort', 'shell_sort', 'merge_sort_simple', 'merge_sort', 'quicksort',
-                      'heap_sort', 'heap_sort_iterative', 'tree_sort']
+                      'heap_sort', 'heap_sort_iterative', 'tree_sort', 'counting_sort', 'radix_sort']
     sorting_time = [0 for n in function_names]
     
     # random un-sorted array

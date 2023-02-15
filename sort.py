@@ -14,6 +14,18 @@ def selection_sort(arr):
         arr[fill_slot], arr[index_of_max] = arr[index_of_max], arr[fill_slot]
     return arr
 
+def chatGPT_selection_sort(arr):
+    for i in range(len(arr)):
+        # Find the minimum element in the unsorted portion of the array
+        min_idx = i
+        for j in range(i+1, len(arr)):
+            if arr[j] < arr[min_idx]:
+                min_idx = j
+                
+        # Swap the minimum element with the first element of the unsorted portion
+        arr[i], arr[min_idx] = arr[min_idx], arr[i]
+        
+    return arr
 
 def insertion_sort(arr):
     """
@@ -28,6 +40,22 @@ def insertion_sort(arr):
             else:# current index i is the correct position for the current element
                 break
         arr[i] = current
+    return arr
+
+def chatGPT_insertion_sort(arr):
+    for i in range(1, len(arr)):
+        # Store the current element and its index
+        current = arr[i]
+        j = i - 1
+        
+        # Shift all larger elements to the right
+        while j >= 0 and arr[j] > current:
+            arr[j+1] = arr[j]
+            j -= 1
+        
+        # Insert the current element in the correct position
+        arr[j+1] = current
+        
     return arr
 
 
@@ -59,6 +87,24 @@ def shell_sort(arr):
             gap_insertion_sort(arr, start_position, gap)
         gap = gap // 2
     return arr
+
+def chatGPT_shell_sort(arr):
+    # Start with a large gap, then reduce the gap
+    n = len(arr)
+    gap = n // 2
+    while gap > 0:
+        # Do a gapped insertion sort for this gap size
+        for i in range(gap, n):
+            current = arr[i]
+            j = i
+            while j >= gap and arr[j - gap] > current:
+                arr[j] = arr[j - gap]
+                j -= gap
+            arr[j] = current
+        gap //= 2
+        
+    return arr
+
 
 def merge_simple(left, right, l=0, r=0):
     """
@@ -146,6 +192,43 @@ def merge_sort(arr):
     creates a sorted copy of the given array
     """
     return _merge_sort(arr, 0, len(arr)-1)
+
+def chatGPT_merge_sort(arr):
+    if len(arr) <= 1:
+        return arr
+
+    # Divide the array into two sub-arrays
+    mid = len(arr) // 2
+    left_arr = arr[:mid]
+    right_arr = arr[mid:]
+
+    # Recursively sort the sub-arrays
+    left_arr = chatGPT_merge_sort(left_arr)
+    right_arr = chatGPT_merge_sort(right_arr)
+
+    # Merge the sorted sub-arrays
+    i = j = k = 0
+    while i < len(left_arr) and j < len(right_arr):
+        if left_arr[i] < right_arr[j]:
+            arr[k] = left_arr[i]
+            i += 1
+        else:
+            arr[k] = right_arr[j]
+            j += 1
+        k += 1
+
+    while i < len(left_arr):
+        arr[k] = left_arr[i]
+        i += 1
+        k += 1
+
+    while j < len(right_arr):
+        arr[k] = right_arr[j]
+        j += 1
+        k += 1
+
+    return arr
+
 
 def quicksort(values, style='left-pivot'):
     """
@@ -289,6 +372,27 @@ def pivot_index_mo3(arr, left, right):
     x = (arr[left], arr[middle], arr[right])
     return x[x.index(sorted(x)[1])]
 
+def chatGPT_quicksort(arr):
+    """
+    Sorts an array in ascending order using the quicksort algorithm.
+
+    Args:
+        arr: An array of integers to sort.
+
+    Returns:
+        The sorted array.
+    """
+    if len(arr) <= 1:
+        return arr
+
+    pivot = arr[len(arr) // 2]
+    left = [x for x in arr if x < pivot]
+    middle = [x for x in arr if x == pivot]
+    right = [x for x in arr if x > pivot]
+
+    return chatGPT_quicksort(left) + middle + chatGPT_quicksort(right)
+
+
 def heap_sort(arr):
     h = heap.MinHeap(arr)
     output = []
@@ -340,6 +444,38 @@ def key_positions(arr, key):
         C[i], total = total, total + C[i]# computes a running sum over C
     return C# C[i] is the number of elements whose key value is less than i
 
+def chatGPT_counting_sort(arr):
+    """
+    Sorts an array of integers, including negative integers, in ascending order
+    using the counting sort algorithm.
+
+    Args:
+        arr: An array of integers to sort.
+
+    Returns:
+        The sorted array.
+    """
+    if not arr:
+        return arr
+
+    min_val, max_val = min(arr), max(arr)
+    count_arr = [0] * (max_val - min_val + 1)
+
+    for x in arr:
+        count_arr[x - min_val] += 1
+
+    for i in range(1, len(count_arr)):
+        count_arr[i] += count_arr[i - 1]
+
+    sorted_arr = [0] * len(arr)
+    for x in reversed(arr):
+        index = count_arr[x - min_val] - 1
+        sorted_arr[index] = x
+        count_arr[x - min_val] -= 1
+
+    return sorted_arr
+
+
 def radix_sort(arr, d=3):
     """
     sorts arr based on its digits using a stable sort (counting sort)
@@ -348,12 +484,80 @@ def radix_sort(arr, d=3):
     for i in range(1, d+1):
         arr = counting_sort(arr, lambda x:x%pow(10,i))
     return arr
+
+def chatGPT_radix_sort(arr):
+    """
+    Sorts the input array using radix sort algorithm.
+    Works with negative elements as well.
+    """
+    def _counting_sort(arr, exp):
+        """
+        Performs counting sort on the given array based on the given exponent.
+        """
+        n = len(arr)
+        output = [0] * n
+
+        # Count the occurrences of each digit
+        count = [0] * 10
+        for i in range(n):
+            digit = (arr[i] // exp) % 10
+            count[digit] += 1
+
+        # Compute the cumulative counts
+        for i in range(1, 10):
+            count[i] += count[i - 1]
+
+        # Place the elements in their correct positions
+        for i in range(n - 1, -1, -1):
+            digit = (arr[i] // exp) % 10
+            output[count[digit] - 1] = arr[i]
+            count[digit] -= 1
+
+        # Copy the output array to the input array
+        for i in range(n):
+            arr[i] = output[i]
+
+    # Separate positive and negative subarrays
+    pos_arr, neg_arr = [], []
+    for x in arr:
+        if x >= 0:
+            pos_arr.append(x)
+        else:
+            neg_arr.append(-x)  # Make negative numbers positive for now
+
+    # Sort positive subarray using radix sort
+    if pos_arr:
+        max_val = max(pos_arr)
+        exp = 1
+        while max_val // exp > 0:
+            _counting_sort(pos_arr, exp)
+            exp *= 10
+
+    # Sort negative subarray using radix sort
+    if neg_arr:
+        max_val = max(neg_arr)
+        exp = 1
+        while max_val // exp > 0:
+            _counting_sort(neg_arr, exp)
+            exp *= 10
+
+        # Convert negative numbers back to their original form
+        neg_arr = [-x for x in reversed(neg_arr)]
+
+    # Combine the two sorted subarrays
+    return neg_arr + pos_arr
+
+
+
+
     
 def main():
-    in_place_sort_functions = [selection_sort, insertion_sort, shell_sort]
-    copy_sort_functions = [merge_sort_simple, merge_sort, quicksort, heap_sort, heap_sort_iterative, tree_sort, counting_sort, radix_sort]
-    function_names = ['selection_sort', 'insertion_sort', 'shell_sort', 'merge_sort_simple', 'merge_sort', 'quicksort',
-                      'heap_sort', 'heap_sort_iterative', 'tree_sort', 'counting_sort', 'radix_sort']
+    in_place_sort_functions = [selection_sort, chatGPT_selection_sort, insertion_sort, chatGPT_insertion_sort, shell_sort, chatGPT_shell_sort]
+    copy_sort_functions = [merge_sort_simple, merge_sort, chatGPT_merge_sort, quicksort, chatGPT_quicksort, heap_sort, heap_sort_iterative,
+                           tree_sort, counting_sort, chatGPT_counting_sort, radix_sort, chatGPT_radix_sort]
+    function_names = ['selection_sort', 'chatGPT_selection_sort', 'insertion_sort', 'chatGPT_insertion_sort', 'shell_sort', 'chatGPT_shell_sort',
+                      'merge_sort_simple', 'merge_sort', 'chatGPT_merge_sort', 'quicksort', 'chatGPT_quicksort',
+                      'heap_sort', 'heap_sort_iterative', 'tree_sort', 'counting_sort', 'chatGPT_counting_sort', 'radix_sort', 'chatGPT_radix_sort']
     sorting_time = [0 for n in function_names]
     
     # random un-sorted array
@@ -382,7 +586,11 @@ def main():
         sorting_time[index] = finish - start
         print(f" {sorting_time[index]:.6f}s,", function_names[index])
 
-    print("Sorted:", all([arrays[i] == sorted_array for i in range(len(arrays))]))
+    success = all([arrays[i] == sorted_array for i in range(len(arrays))])
+    if not success:
+        for i, arr in enumerate(arrays):
+            print(function_names[i], arr[:6],"...",arr[-6:])
+    print("Sorted:", success)
     print(f"Total sorting time: {sum(sorting_time):.6f}s")
     print(f"Average sorting time: {sum(sorting_time) / len(sorting_time):.6f}s")
 

@@ -376,10 +376,11 @@ def main():
         
     for i in range(len(copy_sort_functions)):
         start = time.perf_counter()
-        arrays[i+len(in_place_sort_functions)] = copy_sort_functions[i](arrays[i+len(in_place_sort_functions)])
+        index = i+len(in_place_sort_functions)
+        arrays[index] = copy_sort_functions[i](arrays[index])
         finish = time.perf_counter()
-        sorting_time[i+len(in_place_sort_functions)] = finish - start
-        print(f" {sorting_time[i]:.6f}s,", function_names[i])
+        sorting_time[index] = finish - start
+        print(f" {sorting_time[index]:.6f}s,", function_names[index])
 
     print("Sorted:", all([arrays[i] == sorted_array for i in range(len(arrays))]))
     print(f"Total sorting time: {sum(sorting_time):.6f}s")

@@ -1,4 +1,4 @@
-Accuracy = 0.0001
+ACCURACY = 0.0001
 
 class Matrix:
     def __init__(self, m=3, n=3, val=0, data=None):
@@ -63,7 +63,7 @@ class Matrix:
                 for i in range(m):
                     for j in range(n):
                         delta = abs(other.data[i][j] - self.data[i][j])
-                        if delta > Accuracy:
+                        if delta > ACCURACY:
                             return False
                 return True
         return False
@@ -144,7 +144,62 @@ class Matrix:
 
         return solution
                 
+    def determinant(self, method=2):
+        """
+        The Determinant is simply how much an input vector is scaled when transformed by a full rank matrix.
 
+        det(A) = signed scaling factor = +- area of image region / area of original region
+        det(AB) = det(A)*det(B)
+        if A is invertible (det(A) != 0), det(A) = 1/det(A^-1)
+        det(a|b|c+d) = det(a|b|c) + det(a|b|d), where a,b,c,d are columns
+        det(a|kb) = k*det(a|b)
+        det(kA) = k^n * det(A) for an nxn matrix
+        det(A) = det(A^T)
+
+        Summary: Effect of Row Operations on the Determinant
+            • Adding a multiple of one row to another row does not change
+                the determinant.
+            • Swapping two rows changes the sign of the determinant.
+            • Multiplying a row by a scalar multiplies the determinant by the
+                scalar.
+
+        Method1:
+            if a matrix is diagonal or triangular, the determinant == product of all diagonal entries.
+            Therefore it is possible to use row operations to get the row echelon matrix
+            saving each operation performed to transform the calculated determinant by the above rules.
+
+        Method2:
+            co-factor expansion
+                   [a b]
+            det of [c d] = ad-bc
+
+                   [a b c]
+                   [d e f]        [e f]        [d f]        [d e]
+            det of [g h k] = a*det[h k] - b*det[g k] + c*det[g h]       
+        """
+        if self.height() != self.width():
+            return 0
+        if method == 1:
+            pass
+        elif method == 2:
+            det = self._cofactor_expansion(self.data)
+            return det if self.height() < 4 else -det# hack fixing sign reversed above order 9 (3x3)
+
+    def _cofactor_expansion(self, table, depth=0):
+        if len(table) == 2:
+            det = table[0][0]*table[1][1] - table[0][1]*table[1][0]
+            return det
+                
+        output = 0
+        for j in range(len(table)):           
+            sub_matrix = [table[y][:j] + table[y][j+1:] for y in range(1,len(table))]
+            child_det = self._cofactor_expansion(sub_matrix, depth+1)
+            if (j+depth) % 2 == 0:# + - + -\n- + - +\n+ - + -...
+                output += table[0][j]*child_det
+            else:
+                output -= table[0][j]*child_det
+        
+        return output
 
 def main():
     
@@ -252,10 +307,88 @@ def main():
     
     solution = [1,2,3]
     # testing solution is close in accuracy (as floating point errors occur)
-    tests.append(sum([abs(solution[i] - x) for i, x in enumerate(m.row_echelon_form().back_substitution())]) < Accuracy*len(solution))
+    tests.append(sum([abs(solution[i] - x) for i, x in enumerate(m.row_echelon_form().back_substitution())]) < ACCURACY*len(solution))
     print(" ",all(tests), tests)
 
-    
+    print("determinant")
+    tests = []
+    # 2x2
+    table = [
+            [5,1],
+            [3,1]
+            ]
+    m = Matrix(0,0,0,table)
+    tests.append(abs(m.determinant() - (5*1-3*1)) < ACCURACY)
+    tests.append(abs(m.determinant()*m.determinant() - (m*m).determinant()) < ACCURACY)
+    # 2x2 non full rank / singular matrix
+    table = [
+            [5,10],
+            [3,6]
+            ]
+    m = Matrix(0,0,0,table)
+    tests.append(m.determinant() == 0)
+    # 2x3
+    table = [
+            [5,1,0],
+            [3,1,1]
+            ]
+    m = Matrix(0,0,0,table)
+    tests.append(m.determinant() == 0)
+    # 3x3
+    table = [
+            [2,4,3],
+            [0,5,1],
+            [3,1,0]
+            ]
+    m = Matrix(0,0,0,table)
+    tests.append(abs(m.determinant() - -35) < ACCURACY)
+    tests.append(abs(m.determinant()*m.determinant() - (m*m).determinant()) < ACCURACY)
+    m = m * -1
+    tests.append(abs(m.determinant() - 35) < ACCURACY)
+    tests.append(abs(m.determinant()*m.determinant() - (m*m).determinant()) < ACCURACY)
+    # 4x4
+    table = [
+            [2,4,3,9],
+            [0,5,1,4],
+            [3,1,0,6],
+            [0,3,4,1]
+            ]
+    m = Matrix(0,0,0,table)
+    tests.append(abs(m.determinant() - 168) < ACCURACY)
+    tests.append(abs(m.determinant()*m.determinant() - (m*m).determinant()) < ACCURACY)   
+    m = m * -1 
+    tests.append(abs(m.determinant() - 168) < ACCURACY)
+    tests.append(abs(m.determinant()*m.determinant() - (m*m).determinant()) < ACCURACY)
+    # 5x5
+    table = [
+            [7,5,9,85,9],
+            [7,-3,-3,7,2],
+            [8,-2,8,-7,9],
+            [9,3,7,54,-2],
+            [-9,-7,3,-9,4]
+            ]
+    m = Matrix(0,0,0,table)
+    tests.append(abs(m.determinant() - -800052) < ACCURACY)
+    tests.append(abs(m.determinant()*m.determinant() - (m*m).determinant()) < ACCURACY)
+    m = m * -1
+    tests.append(abs(m.determinant() - 800052) < ACCURACY)
+    tests.append(abs(m.determinant()*m.determinant() - (m*m).determinant()) < ACCURACY)  
+    # 9x9
+    table = [
+            [-1,2,3,4,5,6,7,8,9],
+            [1,-2,3,4,5,6,7,8,9],
+            [1,2,-3,4,5,6,7,8,9],
+            [1,2,3,-4,5,6,7,8,9],
+            [1,2,3,4,-5,6,7,8,9],
+            [1,2,3,4,5,-6,7,8,9],
+            [1,2,3,4,5,6,-7,8,9],
+            [1,2,3,4,5,6,7,-8,9],
+            [1,2,3,4,5,6,7,8,-9]
+            ]
+    m = Matrix(0,0,0,table)
+    tests.append(abs(m.determinant() - 650280960) < ACCURACY)
+    tests.append(abs(m.determinant()*m.determinant() - (m*m).determinant()) < ACCURACY)
+    print(" ",all(tests), tests)
 
 if __name__ == '__main__':
     main()

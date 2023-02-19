@@ -86,37 +86,31 @@ class Matrix:
             output += "\n"
         return output
 
-    def row_echelon_form(self):
+    def row_echelon_form(self, operations=None):
         """
         takes an augmented matrix ([a1 a2 a3 : b]) and returns a copy of it in row echelon form (triangle matrix)
+            optional: operations list to store operations performed
         """
+        if operations == None:
+            operations = []
+
         m = [[self.data[i][j] for j in range(self.width())] for i in range(self.height())]
-        for x in range(self.width()):
-            # x column
-            pivot = None
-            for y in range(x, self.height()):
-                # find the pivot
-                if pivot == None and m[y][x] != 0:
-                    pivot = y
-                elif pivot!=None:# eliminate remaining rows using the pivot row
-                    ratio = -m[y][x] / m[pivot][x]
-                    for j in range(x, self.width()):
-                        m[y][j] += m[pivot][j]*ratio
-            
-        # re-order rows to a triangular matrix
         free_vars = 0
         for x in range(self.width()):
-            y = x - free_vars
-            # find pivot row and swap it with current
-            while y < self.height():
-                if m[y][x] != 0:
-                    m[y], m[x] = m[x], m[y]
-                    break
-                y+=1
-            if y == self.height():
-                free_vars += 1
-            
-        return Matrix(0,0,0,m)        
+            for y in range(x-free_vars, self.height()):
+                pivot_value = m[x-free_vars][x]
+                if pivot_value == 0 and m[y][x] != 0:# find the next pivot row
+                    if y > x-free_vars:# swap pivot row to correct position
+                        m[y], m[x-free_vars] = m[x-free_vars], m[y]
+                        operations.append(f"swap R{y}<->R{x}")
+                elif pivot_value != 0 and y != x-free_vars:# eliminate remaining rows using the pivot row (excluding pivot row)
+                    ratio = -m[y][x] / m[x-free_vars][x]
+                    for j in range(x, self.width()):
+                        m[y][j] += m[x-free_vars][j]*ratio
+                elif pivot_value == 0 and y == self.height()-1:
+                    free_vars += 1
+
+        return Matrix(0,0,0,m)       
 
     def back_substitution(self):
         """
@@ -144,7 +138,7 @@ class Matrix:
 
         return solution
                 
-    def determinant(self, method=2):
+    def determinant(self, method=1):
         """
         The Determinant is simply how much an input vector is scaled when transformed by a full rank matrix.
 
@@ -179,8 +173,14 @@ class Matrix:
         """
         if self.height() != self.width():
             return 0
+        
         if method == 1:
-            pass
+            operations, det = [], 1
+            row_echelon_form = self.row_echelon_form(operations)
+            for i in range(self.width()):
+                det *= row_echelon_form.data[i][i]
+            # transform det with operations performed during gaussian elimination to echelon form
+            return det if len(operations) % 2 == 0 else -det
         elif method == 2:
             det = self._cofactor_expansion(self.data)
             return det if self.height() < 4 else -det# hack fixing sign reversed above order 9 (3x3)
@@ -284,7 +284,6 @@ def main():
           [0,0,1,3]
           ])    
     tests.append(m.row_echelon_form() == m_row_echelon)
-    
     solution = [1,2,3]
     # testing solution is close in accuracy (as floating point errors occur)
     tests.append(sum([abs(solution[i] - x) for i, x in enumerate(m.row_echelon_form().back_substitution())]) < 0.1)
@@ -309,6 +308,7 @@ def main():
     # testing solution is close in accuracy (as floating point errors occur)
     tests.append(sum([abs(solution[i] - x) for i, x in enumerate(m.row_echelon_form().back_substitution())]) < ACCURACY*len(solution))
     print(" ",all(tests), tests)
+
 
     print("determinant")
     tests = []
@@ -387,8 +387,157 @@ def main():
             ]
     m = Matrix(0,0,0,table)
     tests.append(abs(m.determinant() - 650280960) < ACCURACY)
-    tests.append(abs(m.determinant()*m.determinant() - (m*m).determinant()) < ACCURACY)
+    tests.append(abs(m.determinant()*m.determinant() - (m*m).determinant()) < ACCURACY*10000000)# large determinant and therefore error
     print(" ",all(tests), tests)
+
+
+
+    print("Gaussian elimination")
+    tests = []
+  
+    A = [
+          [1,0,1,0],
+          [0,1,1,0],
+          [0,0,0,0],
+          [0,0,0,1]
+          ]
+    m=Matrix(0,0,0,A)
+    m_row_echelon = Matrix(0,0,0,
+    [
+          [1,0,1,0],
+          [0,1,1,0],
+          [0,0,0,1],
+          [0,0,0,0]
+          ])    
+    tests.append(m.row_echelon_form() == m_row_echelon)
+
+    A = [
+          [1,0,1,0],
+          [0,1,1,0],
+          [0,0,0,1]
+          ]
+    m=Matrix(0,0,0,A)
+    m_row_echelon = Matrix(0,0,0,
+    [
+          [1,0,1,0],
+          [0,1,1,0],
+          [0,0,0,1],
+          ])
+    tests.append(m.row_echelon_form() == m_row_echelon)
+
+    A = [
+          [1,0,1,0],
+          [0,1,1,0]
+          ]
+    m=Matrix(0,0,0,A)
+    m_row_echelon = Matrix(0,0,0,
+    [
+          [1,0,1,0],
+          [0,1,1,0]
+          ])
+    tests.append(m.row_echelon_form() == m_row_echelon)
+
+    A = [
+          [1,0,1,0]
+          ]
+    m=Matrix(0,0,0,A)
+    m_row_echelon = Matrix(0,0,0,
+    [
+          [1,0,1,0]
+          ])
+    tests.append(m.row_echelon_form() == m_row_echelon)
+
+
+    A = [
+            [0,0,0,0,0,0,0,0,1],
+            [0,0,0,0,0,0,0,1,0],
+            [0,0,0,0,0,0,1,0,0],
+            [0,0,0,0,0,1,0,0,0],
+            [0,0,0,0,1,0,0,0,0],
+            [0,0,0,1,0,0,0,0,0],
+            [0,0,1,0,0,0,0,0,0],
+            [0,1,0,0,0,0,0,0,0],
+            [1,0,0,0,0,0,0,0,0]
+            ]
+    m = Matrix(0,0,0,A)
+    m_row_echelon = Matrix(0,0,0,
+    [
+            [1,0,0,0,0,0,0,0,0],
+            [0,1,0,0,0,0,0,0,0],
+            [0,0,1,0,0,0,0,0,0],
+            [0,0,0,1,0,0,0,0,0],
+            [0,0,0,0,1,0,0,0,0],
+            [0,0,0,0,0,1,0,0,0],
+            [0,0,0,0,0,0,1,0,0],
+            [0,0,0,0,0,0,0,1,0],
+            [0,0,0,0,0,0,0,0,1]
+          ])
+    tests.append(m.row_echelon_form() == m_row_echelon)
+
+    A = [
+            [0,0,0,0,0,0,0,0,1],
+            [0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,1,1,0,0],
+            [0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,1,0,0,1,0],
+            [0,0,0,1,0,0,0,1,0],
+            [0,1,1,0,0,1,0,0,0],
+            [0,0,0,0,0,0,0,0,0],
+            [1,1,0,0,0,0,0,0,0]
+            ]
+    m = Matrix(0,0,0,A)
+    m_row_echelon = Matrix(0,0,0,
+    [
+            [1,1,0,0,0,0,0,0,0],
+            [0,1,1,0,0,1,0,0,0],
+            [0,0,0,1,0,0,0,1,0],
+            [0,0,0,0,1,0,0,1,0],
+            [0,0,0,0,0,1,1,0,0],
+            [0,0,0,0,0,0,0,0,1],
+            [0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0]
+          ])
+
+    tests.append(m.row_echelon_form() == m_row_echelon)
+
+
+    """
+    variables x[iron, copper, tin, coal]
+    2 1 1 2 = 4
+    2 0 0 1 = 3
+    4 2 2 4 = 8
+    0 2 2 2 = 2
+
+    x2 = 1-(x3)-(x4)
+    2x1 = 4-2(x4)-(x3)-(x2) = 4-2(x4)-(x3)-(1-(x3)-(x4)) = 4-1-2(x4)+(x4)-(x3)+(x3) = 3-(x4)
+     x1 = 3/2 - (x4)/2
+
+    (4,3,8,2) = (3/2, 1, 0, 0) + x3(0, -1, 1, 0) + x4(-1/2, -1, 0, 1)
+
+    e.g.
+        6 tin, 8 coal, copper = 1-6-8 = -13, iron = 3/2 - 4 = -5/2
+    """
+    A = [
+            [2,1,1,2,4],
+            [2,0,0,1,3],
+            [4,2,2,4,8],
+            [0,2,2,2,2]
+            ]
+    m = Matrix(0,0,0,A)
+    m_row_echelon = Matrix(0,0,0,
+    [
+            [2,1,1,2,4],
+            [0,-1,-1,-1,-1],
+            [0,0,0,0,0],
+            [0,0,0,0,0]
+          ])
+    tests.append(m.row_echelon_form() == m_row_echelon)  
+    print(" ",all(tests), tests)
+
+
+
+
 
 if __name__ == '__main__':
     main()

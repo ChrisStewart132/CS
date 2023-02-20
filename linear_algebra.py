@@ -110,7 +110,15 @@ class Matrix:
                 elif pivot_value == 0 and y == self.height()-1:
                     free_vars += 1
 
-        return Matrix(0,0,0,m)       
+        return Matrix(0,0,0,m)
+
+    def range(self):
+        m = self.row_echelon_form().data
+        rank = self.height()
+        for i in range(self.height()-1,-1,-1):
+            if m[i] == [0 for x in range(self.width())]:# full zero row
+                rank -= 1
+        return rank
 
     def back_substitution(self):
         """
@@ -284,6 +292,7 @@ def main():
           [0,0,1,3]
           ])    
     tests.append(m.row_echelon_form() == m_row_echelon)
+    tests.append(m.range() == 3)
     solution = [1,2,3]
     # testing solution is close in accuracy (as floating point errors occur)
     tests.append(sum([abs(solution[i] - x) for i, x in enumerate(m.row_echelon_form().back_substitution())]) < 0.1)
@@ -303,7 +312,7 @@ def main():
     ])
     
     tests.append(m.row_echelon_form() == m_row_echelon)
-    
+    tests.append(m.range() == 3)
     solution = [1,2,3]
     # testing solution is close in accuracy (as floating point errors occur)
     tests.append(sum([abs(solution[i] - x) for i, x in enumerate(m.row_echelon_form().back_substitution())]) < ACCURACY*len(solution))
@@ -319,6 +328,7 @@ def main():
             ]
     m = Matrix(0,0,0,table)
     tests.append(abs(m.determinant() - (5*1-3*1)) < ACCURACY)
+    tests.append(m.range() == 2)
     tests.append(abs(m.determinant()*m.determinant() - (m*m).determinant()) < ACCURACY)
     # 2x2 non full rank / singular matrix
     table = [
@@ -327,6 +337,7 @@ def main():
             ]
     m = Matrix(0,0,0,table)
     tests.append(m.determinant() == 0)
+    tests.append(m.range() == 1)
     # 2x3
     table = [
             [5,1,0],
@@ -334,6 +345,7 @@ def main():
             ]
     m = Matrix(0,0,0,table)
     tests.append(m.determinant() == 0)
+    tests.append(m.range() == 2)
     # 3x3
     table = [
             [2,4,3],
@@ -342,9 +354,11 @@ def main():
             ]
     m = Matrix(0,0,0,table)
     tests.append(abs(m.determinant() - -35) < ACCURACY)
+    tests.append(m.range() == 3)
     tests.append(abs(m.determinant()*m.determinant() - (m*m).determinant()) < ACCURACY)
     m = m * -1
     tests.append(abs(m.determinant() - 35) < ACCURACY)
+    tests.append(m.range() == 3)
     tests.append(abs(m.determinant()*m.determinant() - (m*m).determinant()) < ACCURACY)
     # 4x4
     table = [
@@ -355,6 +369,7 @@ def main():
             ]
     m = Matrix(0,0,0,table)
     tests.append(abs(m.determinant() - 168) < ACCURACY)
+    tests.append(m.range() == 4)
     tests.append(abs(m.determinant()*m.determinant() - (m*m).determinant()) < ACCURACY)   
     m = m * -1 
     tests.append(abs(m.determinant() - 168) < ACCURACY)
@@ -369,6 +384,7 @@ def main():
             ]
     m = Matrix(0,0,0,table)
     tests.append(abs(m.determinant() - -800052) < ACCURACY)
+    tests.append(m.range() == 5)
     tests.append(abs(m.determinant()*m.determinant() - (m*m).determinant()) < ACCURACY)
     m = m * -1
     tests.append(abs(m.determinant() - 800052) < ACCURACY)
@@ -387,6 +403,7 @@ def main():
             ]
     m = Matrix(0,0,0,table)
     tests.append(abs(m.determinant() - 650280960) < ACCURACY)
+    tests.append(m.range() == 9)
     tests.append(abs(m.determinant()*m.determinant() - (m*m).determinant()) < ACCURACY*10000000)# large determinant and therefore error
     print(" ",all(tests), tests)
 
@@ -410,7 +427,7 @@ def main():
           [0,0,0,0]
           ])    
     tests.append(m.row_echelon_form() == m_row_echelon)
-
+    tests.append(m.range() == 3)
     A = [
           [1,0,1,0],
           [0,1,1,0],
@@ -424,7 +441,7 @@ def main():
           [0,0,0,1],
           ])
     tests.append(m.row_echelon_form() == m_row_echelon)
-
+    tests.append(m.range() == 3)
     A = [
           [1,0,1,0],
           [0,1,1,0]
@@ -436,7 +453,7 @@ def main():
           [0,1,1,0]
           ])
     tests.append(m.row_echelon_form() == m_row_echelon)
-
+    tests.append(m.range() == 2)
     A = [
           [1,0,1,0]
           ]
@@ -446,7 +463,7 @@ def main():
           [1,0,1,0]
           ])
     tests.append(m.row_echelon_form() == m_row_echelon)
-
+    tests.append(m.range() == 1)
 
     A = [
             [0,0,0,0,0,0,0,0,1],
@@ -473,7 +490,7 @@ def main():
             [0,0,0,0,0,0,0,0,1]
           ])
     tests.append(m.row_echelon_form() == m_row_echelon)
-
+    tests.append(m.range() == 9)
     A = [
             [0,0,0,0,0,0,0,0,1],
             [0,0,0,0,0,0,0,0,0],
@@ -500,7 +517,7 @@ def main():
           ])
 
     tests.append(m.row_echelon_form() == m_row_echelon)
-
+    tests.append(m.range() == 6)
 
     """
     variables x[iron, copper, tin, coal]
@@ -532,11 +549,8 @@ def main():
             [0,0,0,0,0],
             [0,0,0,0,0]
           ])
-    tests.append(m.row_echelon_form() == m_row_echelon)  
+    tests.append(m.row_echelon_form() == m_row_echelon)   
     print(" ",all(tests), tests)
-
-
-
 
 
 if __name__ == '__main__':

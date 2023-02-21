@@ -36,6 +36,10 @@ class Matrix:
             return self
         elif isinstance(other, Matrix):# transform the matrix
             return self._matrix_multiplication(other)
+        elif isinstance(other, (list,tuple)):# A*x = b
+            x = Matrix(0,0,0,[other])# convert list to matrix
+            x = x.transpose()# transpose the list to a column vector/matrix
+            return self*x# return A*x
         
     def _matrix_multiplication(self, other):
         if self.width() == other.height():
@@ -131,18 +135,31 @@ class Matrix:
         1(x1) + 2(x2) + 3(x3) = 8
                 2(x2) + 2(x3) = 4
                         2(x3) = 1
+
+        for singular matrices returns a basic solution with all free variables zeroed
         """
         m = self.data
         solution = [None for x in range(self.width()-1)]# [x1,x2...xn]
-        y = self.height()-1
-        for x in range(self.width()-2,-1,-1):
-            pivot = m[y][x]
-            rhs = m[y][-1] - sum([solution[j]*m[y][j] for j in range(x+1, self.width()-1)])# b - a1.x1 - a2.x2...
-            solution[y] = rhs / m[y][x]
-        
-            y -= 1
-            if y == -1:
-                break
+
+        pivots, free_vars = [0]*(self.width()-1), [0]*(self.width()-1)
+        for y in range(self.height()-1,-1,-1):
+            if m[y] == [0] * self.width():
+                continue
+            else:
+                for x in range(self.width()-1):# A[y][0] -> A[y][-1]
+                    if abs(m[y][x]) != 0:# found pivot point
+                        break
+                pivot = m[y][x]
+                pivots[x] = 1# set the variable xn as constraint (not free)
+
+                # zero all free variables to get a simple solution
+                for j in range(x+1, self.width()-1):
+                    if pivots[j] == 0 or free_vars[j] == 1:
+                        m[y][j], solution[j] = 0, 0
+                        free_vars[j] = 1
+                                        
+                rhs = m[y][-1] - sum([solution[j]*m[y][j] for j in range(x+1, self.width()-1)])# b - a1.x1 - a2.x2...
+                solution[x] = rhs / m[y][x]
 
         return solution
                 
@@ -295,7 +312,7 @@ def main():
     tests.append(m.range() == 3)
     solution = [1,2,3]
     # testing solution is close in accuracy (as floating point errors occur)
-    tests.append(sum([abs(solution[i] - x) for i, x in enumerate(m.row_echelon_form().back_substitution())]) < 0.1)
+    tests.append(sum([abs(solution[i] - x) for i, x in enumerate(m.row_echelon_form().back_substitution())]) < ACCURACY)
     
     # example matrix with x1,x2,x3 = 1,2,3
     Ab = [
@@ -409,9 +426,28 @@ def main():
 
 
 
-    print("Gaussian elimination")
+    print("Singular / non-full rank Gaussian elimination and back substitution")
     tests = []
   
+    A = [
+          [1,0,1,0,4],
+          [0,1,1,0,5],
+          [0,0,0,0,0],
+          [0,0,0,1,4]
+          ]
+    m=Matrix(0,0,0,A)
+    m_row_echelon = Matrix(0,0,0,
+    [
+          [1,0,1,0,4],
+          [0,1,1,0,5],
+          [0,0,0,1,4],
+          [0,0,0,0,0]
+          ])    
+    tests.append(m.row_echelon_form() == m_row_echelon)
+    tests.append(m.range() == 3)
+    solution = [4,5,0,4]
+    calculated_solution = m.row_echelon_form().back_substitution()
+    tests.append(sum([abs(solution[i] - x) for i, x in enumerate(calculated_solution)]) < ACCURACY*len(solution))
     A = [
           [1,0,1,0],
           [0,1,1,0],
@@ -419,15 +455,9 @@ def main():
           [0,0,0,1]
           ]
     m=Matrix(0,0,0,A)
-    m_row_echelon = Matrix(0,0,0,
-    [
-          [1,0,1,0],
-          [0,1,1,0],
-          [0,0,0,1],
-          [0,0,0,0]
-          ])    
-    tests.append(m.row_echelon_form() == m_row_echelon)
-    tests.append(m.range() == 3)
+    tests.append(m*calculated_solution == Matrix(0,0,0,[[4,5,0,4]]).transpose())# convert list to column Matrix
+    tests.append((m*calculated_solution).transpose().data[0] == [4,5,0,4])# same as above but converting b from Matrix to list
+    
     A = [
           [1,0,1,0],
           [0,1,1,0],
@@ -519,6 +549,23 @@ def main():
     tests.append(m.row_echelon_form() == m_row_echelon)
     tests.append(m.range() == 6)
 
+    m = Matrix(0,0,0,
+    [
+            [1,1,0,0,0,0,0,0,0,3],
+            [0,1,1,0,0,1,0,0,0,8],
+            [0,0,0,1,0,0,0,1,0,4],
+            [0,0,0,0,1,0,0,1,0,5],
+            [0,0,0,0,0,1,1,0,0,6],
+            [0,0,0,0,0,0,0,0,1,9],
+            [0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0]
+          ])
+
+    solution = [1,2,0,4,5,6,0,0,9]
+    calculated_solution = m.row_echelon_form().back_substitution()
+    tests.append(solution == calculated_solution)
+
     """
     variables x[iron, copper, tin, coal]
     2 1 1 2 = 4
@@ -549,7 +596,7 @@ def main():
             [0,0,0,0,0],
             [0,0,0,0,0]
           ])
-    tests.append(m.row_echelon_form() == m_row_echelon)   
+    tests.append(m.row_echelon_form() == m_row_echelon)    
     print(" ",all(tests), tests)
 
 

@@ -124,7 +124,7 @@ class Matrix:
                 rank -= 1
         return rank
 
-    def back_substitution(self):
+    def back_substitution(self, free_index=None):
         """
         solves an augmented triangular matrix
         x1 x2 x3 : b
@@ -136,12 +136,16 @@ class Matrix:
                 2(x2) + 2(x3) = 4
                         2(x3) = 1
 
-        for singular matrices returns a basic solution with all free variables zeroed
+        returns a tuple:
+            basic solution vector (x1,x2,x3)
+            list of all free variable vectors [t(1,1,0), s(4,0,1)] etc (without the t/s)     
         """
-        m = self.data
+        m = [[self.data[i][j] for j in range(self.width())] for i in range(self.height())]
         solution = [None for x in range(self.width()-1)]# [x1,x2...xn]
-
+        if free_index:# set a known free variable index to find a different solution
+            solution[free_index] = 1# set the free variable, e.g. t = 1 where x = (..,..,..) + t(..,..,..)
         pivots, free_vars = [0]*(self.width()-1), [0]*(self.width()-1)
+        
         for y in range(self.height()-1,-1,-1):
             if m[y] == [0] * self.width():
                 continue
@@ -152,16 +156,26 @@ class Matrix:
                 pivot = m[y][x]
                 pivots[x] = 1# set the variable xn as constraint (not free)
 
-                # zero all free variables to get a simple solution
+                # zero all free variables (except the specified free_var) to get a simple solution
                 for j in range(x+1, self.width()-1):
-                    if pivots[j] == 0 or free_vars[j] == 1:
+                    if pivots[j] == 0 and j != free_index:
                         m[y][j], solution[j] = 0, 0
                         free_vars[j] = 1
                                         
                 rhs = m[y][-1] - sum([solution[j]*m[y][j] for j in range(x+1, self.width()-1)])# b - a1.x1 - a2.x2...
                 solution[x] = rhs / m[y][x]
 
-        return solution
+
+
+        free_vectors = []# free variable equations
+        if sum(free_vars) > 0 and free_index == None:# first function call calls for all children free variables
+            for i in range(len(free_vars)):
+                if free_vars[i] == 1:
+                    free_solution, _ = self.back_substitution(i)
+                    free_vector = [free_solution[j] - solution[j] for j in range(len(solution))]
+                    free_vectors.append(tuple(free_vector))
+            
+        return tuple(solution), free_vectors
                 
     def determinant(self, method=1):
         """
@@ -310,9 +324,11 @@ def main():
           ])    
     tests.append(m.row_echelon_form() == m_row_echelon)
     tests.append(m.range() == 3)
-    solution = [1,2,3]
+    solution = (1,2,3)
+    calculated_solution, free_solutions = m.row_echelon_form().back_substitution()
     # testing solution is close in accuracy (as floating point errors occur)
-    tests.append(sum([abs(solution[i] - x) for i, x in enumerate(m.row_echelon_form().back_substitution())]) < ACCURACY)
+    tests.append(sum([abs(solution[i] - x) for i, x in enumerate(calculated_solution)]) < ACCURACY)
+    tests.append(len(free_solutions) == 0)
     
     # example matrix with x1,x2,x3 = 1,2,3
     Ab = [
@@ -330,9 +346,11 @@ def main():
     
     tests.append(m.row_echelon_form() == m_row_echelon)
     tests.append(m.range() == 3)
-    solution = [1,2,3]
+    solution = (1,2,3)
+    calculated_solution, free_solutions = m.row_echelon_form().back_substitution()
     # testing solution is close in accuracy (as floating point errors occur)
-    tests.append(sum([abs(solution[i] - x) for i, x in enumerate(m.row_echelon_form().back_substitution())]) < ACCURACY*len(solution))
+    tests.append(sum([abs(solution[i] - x) for i, x in enumerate(calculated_solution)]) < ACCURACY*len(solution))
+    tests.append(len(free_solutions) == 0)
     print(" ",all(tests), tests)
 
 
@@ -445,8 +463,8 @@ def main():
           ])    
     tests.append(m.row_echelon_form() == m_row_echelon)
     tests.append(m.range() == 3)
-    solution = [4,5,0,4]
-    calculated_solution = m.row_echelon_form().back_substitution()
+    solution = (4,5,0,4)
+    calculated_solution, free_solutions = m.row_echelon_form().back_substitution()
     tests.append(sum([abs(solution[i] - x) for i, x in enumerate(calculated_solution)]) < ACCURACY*len(solution))
     A = [
           [1,0,1,0],
@@ -457,7 +475,9 @@ def main():
     m=Matrix(0,0,0,A)
     tests.append(m*calculated_solution == Matrix(0,0,0,[[4,5,0,4]]).transpose())# convert list to column Matrix
     tests.append((m*calculated_solution).transpose().data[0] == [4,5,0,4])# same as above but converting b from Matrix to list
-    
+    # testing solution with the free variable 'x3' set to 2
+    tests.append(m*([calculated_solution[i]+2*free_solutions[0][i] for i in range(len(solution))]) == Matrix(0,0,0,[[4,5,0,4]]).transpose())
+
     A = [
           [1,0,1,0],
           [0,1,1,0],
@@ -562,16 +582,32 @@ def main():
             [0,0,0,0,0,0,0,0,0,0]
           ])
 
-    solution = [1,2,0,4,5,6,0,0,9]
-    calculated_solution = m.row_echelon_form().back_substitution()
+    A = Matrix(0,0,0,
+    [
+            [1,1,0,0,0,0,0,0,0],
+            [0,1,1,0,0,1,0,0,0],
+            [0,0,0,1,0,0,0,1,0],
+            [0,0,0,0,1,0,0,1,0],
+            [0,0,0,0,0,1,1,0,0],
+            [0,0,0,0,0,0,0,0,1],
+            [0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0]
+          ])
+    b = [3,8,4,5,6,9,0,0,0]
+    solution = (1,2,0,4,5,6,0,0,9)
+    calculated_solution, free_solutions = m.row_echelon_form().back_substitution()
     tests.append(solution == calculated_solution)
+    tests.append(Matrix(0,0,0,[b]).transpose() == A*[calculated_solution[i] + 3*free_solutions[0][i] for i in range(len(solution))])
+    tests.append(Matrix(0,0,0,[b]).transpose() == A*[calculated_solution[i] + 3*free_solutions[1][i] for i in range(len(solution))])
+    tests.append(Matrix(0,0,0,[b]).transpose() == A*[calculated_solution[i] + 3*free_solutions[2][i] for i in range(len(solution))])
 
     """
     variables x[iron, copper, tin, coal]
-    2 1 1 2 = 4
-    2 0 0 1 = 3
-    4 2 2 4 = 8
-    0 2 2 2 = 2
+    2 1 1 2 = $4
+    2 0 0 1 = $3
+    4 2 2 4 = $8
+    0 2 2 2 = $2
 
     x2 = 1-(x3)-(x4)
     2x1 = 4-2(x4)-(x3)-(x2) = 4-2(x4)-(x3)-(1-(x3)-(x4)) = 4-1-2(x4)+(x4)-(x3)+(x3) = 3-(x4)
@@ -596,8 +632,12 @@ def main():
             [0,0,0,0,0],
             [0,0,0,0,0]
           ])
-    tests.append(m.row_echelon_form() == m_row_echelon)    
+    tests.append(m.row_echelon_form() == m_row_echelon)
+    solution = (3/2,1,0,0)
+    calculated_solution, free_solutions = m.row_echelon_form().back_substitution()
+    tests.append(solution == calculated_solution)   
     print(" ",all(tests), tests)
+
 
 
 if __name__ == '__main__':

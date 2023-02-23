@@ -77,7 +77,12 @@ class Matrix:
             self.data = other.data
 
     def transpose(self):
-        return Matrix(None,None,None,[[self.data[j][i] for j in range(self.height())] for i in range(self.width())])        
+        return Matrix(None,None,None,[[self.data[j][i] for j in range(self.height())] for i in range(self.width())])
+
+    def augment(self, b):
+        AT = self.transpose()
+        AT.data.append(b)
+        return AT.transpose()
 
     def __repr__(self):
         return str(self)
@@ -86,7 +91,7 @@ class Matrix:
         output = ""
         for i in range(len(self.data)):
             for j in range(len(self.data[0])):
-                output += f"{self.data[i][j]:.2f} "
+                output += f"{self.data[i][j]:.2f} " if isinstance(self.data[i][j], float) else f"{self.data[i][j]} "
             output += "\n"
         return output
 
@@ -639,6 +644,84 @@ def main():
     print(" ",all(tests), tests)
 
 
+    print("\n\nExample Practical Applications.\n")
+    """
+    Curve fitting 3 2D points: (1,16),(2,6),(3,58)
+    p(x) = ax**2 + bx + c 
+    a  b  c : y
+    1  1  1 : 16
+    4  2  1 : 6
+    9  3  1 : 58
+    """
+    print("\nCurve fitting 3 points [(1,16),(2,6),(3,58)] to a quadratic / bi-nomial\n")
+    Ab = [
+        [1,1,1,16],
+        [4,2,1,6],
+        [9,3,1,58]
+        ]
+    m = Matrix(0,0,0,Ab)
+    print(m)
+    m_row_echelon = m.row_echelon_form()
+    print(m_row_echelon)
+    solution, free_solutions = m_row_echelon.back_substitution()
+    print(f"y = {solution[0]:.2f}x^2 + {solution[1]:.2f}x + {solution[2]:.2f}")# unique solution
+
+
+
+    
+    """
+    An investment company sells three types of unit investment fund —
+    Standard (S), Deluxe(D) and Gold Star (G). The composition of these units is as follows:
+        Each unit of S contains 12 shares of stock A, 16 of stock B and 8 of stock C.
+        Each unit of D contains 20 shares of stock A, 12 of stock B and 28 of stock C.
+        Each unit of G contains 32 shares of stock A, 28 of stock B and 36 of stock C.       
+    An investor wishes to purchase exactly 220 shares of stock A, 176 shares of stock B and
+    264 shares of stock C by buying units of the three investment funds.
+        (a) Set up a system of linear equations for this problem and solve the system.
+        (b) Find the combinations of units of S, D and G which will meet the investor’s require-
+            ments. (You will need to impose certain restrictions which arise naturally from the problem.)
+        (c) Suppose each unit of S, D and G costs the investor $300, $400 and $600 respectively.
+            Which investment will minimise the cost to the investor?
+    (a)
+        Ax=b
+        a  b  c  : RHS
+        12 20 32 : 220
+        16 12 28 : 176
+        8  28 36 : 264
+    (b)
+        row echelon form
+        3  5  8 : 55
+        0  1  1 : 8
+        0  0  0 : 0
+
+        c = free var
+        b = 8-c
+        3a = 55-8c-5b
+        3a = 55-8c-5(8-c)
+        3a = 55-8c-40+5c
+        3a = 15-3c
+        a  = 5 - c
+
+        r = (5, 8, 0) + t(-1, -1, 1), where t is a free variable (can take any form and the solution holds) for (S,D,G)
+    (c)  
+         because 5,8 is a solution, but 5-1, 8,-1, 1 is also a solution (with t = 1)
+            S=300,D=400,G=600, therefore t has a cost of -300-400+600 = - 100
+            so maximise t (while not going to negative stock package purchases)
+
+        (5,8,0) + 5(-1,-1,1) = 0,3,5 to minimise cost at 3(400) + 5(600) = 1200 + 3000 = $ 4200
+            vs 5(300) + 8(400) = 1500 + 3200 = $ 4700     
+    """
+    print("\n\nInvestment package optimisation\n")
+    Ab = [
+          [12,20,32,220],
+          [16,12,28,176],
+          [8 ,28,36,264]
+          ]
+    m=Matrix(0,0,0,Ab)
+    print(m)
+    print(m.row_echelon_form())
+    print('x = (5x1,8x2,0x3) + t(-x1,-x2,x3)')# inf solutions
+    print('x =', m.row_echelon_form().back_substitution())# basic solution
 
 if __name__ == '__main__':
     main()

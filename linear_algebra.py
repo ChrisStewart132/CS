@@ -723,5 +723,95 @@ def main():
     print('x = (5x1,8x2,0x3) + t(-x1,-x2,x3)')# inf solutions
     print('x =', m.row_echelon_form().back_substitution())# basic solution
 
+
+    def fibonacci(n):
+        """
+        0,1,1,2,3,5,8,13...
+        fibo [f0, f1][0 1]=[f1,f0+f1=f2]
+                     [1 1]
+        """
+        if n < 2:
+            return n    
+        f = Matrix(0,0,0,[[0,1],[1,1]])
+        current = Matrix(0,0,0,[[0,1]])
+        for i in range(n-1):
+            current = current*f
+        return current.data[0][1]
+    
+    x=[]
+    for i in range(8):
+        x.append(fibonacci(i))
+    print('\n\nfibonacci',0,'->',i,x)
+
+
+    print("\n\nLeast Squares Approximation: fitting many data points to a polynomial curve\n  In this case a projectile falling from a height of 100m (t, h(m))")
+    """
+    Assuming a cannon ball is launched horizontally at a height of 100m with a horizontal velocity of 10 m/s and gravity == -9.81 m/s^2
+    pos.x = pos.x + v.x*t
+    pos.y = pos.y - v.y*t
+    v.x   = 10
+    v.y   = v.y - g*t
+    [px 0 vx 0  0][1  0  0  0  0] = [px+t.vx 0       vx  0      0]
+    [0  py 0 vy g][0  1  0  0  0]   [0       py+t.vy 0   vy+t.g g]
+    [0  0  0 0  0][t  0  1  0  0]   [0       0       0   0      0]
+    [0  0  0 0  0][0  t  0  1  0]   [0       0       0   0      0]
+    [0  0  0 0  0][0  0  0  t  1]   [0       0       0   0      0]
+    f''(t) = -9.81, f'(t) = -9.81x + v, f(t) = (-9.81/2)x**2 + (v)x + h
+    """
+    t, g = 1/200, -9.81
+    px, py = 0, 100
+    vx, vy = 10, 0
+    x = Matrix(0,0,0,
+        [
+        [1, 0, 0, 0, 0],
+        [0, 1, 0, 0, 0],
+        [t, 0, 1, 0, 0],
+        [0, t, 0, 1, 0],
+        [0, 0, 0, t, 1]
+        ])
+    A = Matrix(0,0,0,
+        [
+        [px, 0, vx, 0,  0],
+        [0,  py, 0, vy, g],
+        [0,  0,  0, 0,  0],
+        [0,  0,  0, 0,  0],
+        [0,  0,  0, 0,  0]
+        ]) 
+    data_set, time = [], 0
+    
+    def calculated_height(t, h, v=0):
+        return (g/2)*t**2 + v*t + h
+    
+    while A.data[1][1] > 0:# while height > 0, simulate a physics frame
+        A = A*x
+        time += t
+        data_set.append( ( round(time, 3), round(A.data[1][1], 3) ) )
+
+    print("data =",data_set[:3],"..",data_set[-3:])
+    print(f"time:{time:.3f}s, calculated_height:{calculated_height(time,100,0):.3f}, px:{A.data[0][0]:.3f}m, py:{A.data[1][1]:.3f}m, vx:{A.data[0][0]:.3f}m/s, vy:{A.data[1][3]:.3f}m/s\n")
+
+    # using the normal equation A^T.A.x = A^T.b to solve [a,b,c]
+    # y = ax^2 + bx + c
+    a = []# A matrix
+    b = []# b vector   
+    for point in data_set:
+        row = []#
+        row.append(point[0]**2)#ax^2
+        row.append(point[0])#bx
+        row.append(1)#c
+        a.append(row)#matrix
+        b.append(point[1])#y height(m)
+
+    #print(data_set)
+    
+    A = Matrix(0,0,0,a)
+    AT = A.transpose()
+    ATA = AT*A
+    B = Matrix(0,0,0,[b]).transpose()
+    ATB = AT*B
+    augmented_A = ATA.augment(ATB.transpose().data[0])
+    solution, _ = augmented_A.row_echelon_form().back_substitution()
+    print(f"y = {solution[0]:.3f}x^2 + {solution[1]:.3f}x + {solution[2]:.3f}")
+
 if __name__ == '__main__':
     main()

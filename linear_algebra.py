@@ -1,3 +1,4 @@
+from math import cos, sin, pi
 ACCURACY = 0.0001
 
 class Matrix:
@@ -84,6 +85,12 @@ class Matrix:
         AT.data.append(b)
         return AT.transpose()
 
+    def unaugment(self):
+        AT = self.transpose()
+        b = AT.data.pop()
+        return AT.transpose(), b
+        
+
     def __repr__(self):
         return str(self)
     
@@ -91,7 +98,7 @@ class Matrix:
         output = ""
         for i in range(len(self.data)):
             for j in range(len(self.data[0])):
-                output += f"{self.data[i][j]:.2f} " if isinstance(self.data[i][j], float) else f"{self.data[i][j]} "
+                output += f"{self.data[i][j]:.3f} " if isinstance(self.data[i][j], float) else f"{self.data[i][j]} "
             output += "\n"
         return output
 
@@ -723,7 +730,7 @@ def main():
     print('x = (5x1,8x2,0x3) + t(-x1,-x2,x3)')# inf solutions
     print('x =', m.row_echelon_form().back_substitution())# basic solution
 
-
+   
     def fibonacci(n):
         """
         0,1,1,2,3,5,8,13...
@@ -756,9 +763,9 @@ def main():
     [0  0  0 0  0][t  0  1  0  0]   [0       0       0   0      0]
     [0  0  0 0  0][0  t  0  1  0]   [0       0       0   0      0]
     [0  0  0 0  0][0  0  0  t  1]   [0       0       0   0      0]
-    f''(t) = -9.81, f'(t) = -9.81x + v, f(t) = (-9.81/2)x**2 + (v)x + h
+    f''(t) = -9.81, f'(t) = -9.81t + v, f(t) = (-9.81/2)t**2 + (v)t + h
     """
-    t, g = 1/200, -9.81
+    t, g = 1/20, -9.81
     px, py = 0, 100
     vx, vy = 10, 0
     x = Matrix(0,0,0,
@@ -789,7 +796,7 @@ def main():
 
     print("data =",data_set[:3],"..",data_set[-3:])
     print(f"time:{time:.3f}s, calculated_height:{calculated_height(time,100,0):.3f}, px:{A.data[0][0]:.3f}m, py:{A.data[1][1]:.3f}m, vx:{A.data[0][0]:.3f}m/s, vy:{A.data[1][3]:.3f}m/s\n")
-
+    
     # using the normal equation A^T.A.x = A^T.b to solve [a,b,c]
     # y = ax^2 + bx + c
     a = []# A matrix
@@ -812,6 +819,117 @@ def main():
     augmented_A = ATA.augment(ATB.transpose().data[0])
     solution, _ = augmented_A.row_echelon_form().back_substitution()
     print(f"y = {solution[0]:.3f}x^2 + {solution[1]:.3f}x + {solution[2]:.3f}")
+    print(f"f(t) = (-9.81/2)t**2 + (v)t + h")
+
+
+
+
+    print("\nTransformations")
+    def translate(m,x,y,z):
+        """
+        [1 0 0 x][x1]=[x1+x]
+        [0 1 0 y][x2] [x2+y]
+        [0 0 1 z][x3] [x3+z]
+        [0 0 0 1][x4] [x4]
+        """
+        A = [
+            [1,0,0,x],
+            [0,1,0,y],
+            [0,0,1,z],
+            [0,0,0,1]
+            ]
+        return Matrix(0,0,0,A)*m
+    def scale(m,x,y,z):
+        """
+        [x 0 0 0][x1]=[x1*x]
+        [0 y 0 0][x2] [x2*y]
+        [0 0 z 0][x3] [x3*z]
+        [0 0 0 1][x4] [x4]
+        """
+        A = [
+            [x,0,0,0],
+            [0,y,0,0],
+            [0,0,z,0],
+            [0,0,0,1]
+            ]
+        return Matrix(0,0,0,A)*m
+    def rotate(m,d,a):
+        """
+        positive == ACW along/direction of the axis of rotation 
+        x=right, y=up, z=backward
+
+        X = [1      0        0       0][x1]=[x1]
+            [0      cos(a)  -sin(a)  0][x2] [x2*cos(a) - x3*sin(a)]
+            [0      sin(a)   cos(a)  0][x3] [x3*sin(a) + x4*cos(a)]
+            [0      0        0       1][x4] [x4]
+            
+        Y = [cos(a)  0       sin(a)  0][x1]=[x1*cos(a) + x3*sin(a)]
+            [0       1       0       0][x2] [x2]
+            [-sin(a) 0       cos(a)  0][x3] [x3*cos(a) - x1*sin(a)]
+            [0       0       1       1][x4] [x4]
+
+        Z = [cos(a)  sin(a)  0       0][x1]=[x1*cos(a) + x2*sin(a)]
+            [-sin(a) cos(a)  0       0][x2] [x2*cos(a) - x1*sin(a)]
+            [0       0       1       0][x3] [x3]
+            [0       0       0       1][x4] [x4]
+        """
+        A = None
+        if d[0] == 1:# x
+            A = [
+                [1,      0,        0,       0],
+                [0,      cos(a),  -sin(a),  0],
+                [0,      sin(a),   cos(a),  0],
+                [0,      0,        0,       1]        
+                ]
+        elif d[1] == 1:# y
+            A = [
+                [cos(a),  0,       sin(a),  0],
+                [0,       1,       0,       0],
+                [-sin(a), 0,       cos(a),  0],
+                [0,       0,       0,       1]        
+                ]
+        elif d[2] == 1:# z
+            A = [
+                [cos(a),  sin(a),  0,       0],
+                [-sin(a), cos(a),  0,       0],
+                [0,       0,       1,       0],
+                [0,      0,        0,       1]        
+                ]
+        else:
+            return None
+        return Matrix(0,0,0,A)*m
+
+    
+    def deg_to_rads(a):
+        return a * 2*pi/360
+
+    x = [1,0,0,0]
+    y = [0,1,0,0]
+    z = [0,0,1,0]
+    w = [0,0,0,1]
+    m = Matrix(0,0,0,[x,y,z,w])
+    print("x,y,z,w axis matrix")
+    print(m)
+    m = rotate(m,(0,1,0),deg_to_rads(45))
+    print("rotate along y axis 45 deg ACW")
+    print(m)
+    m = rotate(m,(1,0,0),deg_to_rads(45))
+    print("rotate along x axis 45 deg ACW")
+    print(m)
+    m = rotate(m,(0,0,1),deg_to_rads(45))
+    print("rotate along z axis 45 deg ACW")
+    print(m)
+    m = rotate(m,(0,0,1),deg_to_rads(-45))
+    print("rotate along z axis 45 deg CW")
+    print(m)
+    m = rotate(m,(1,0,0),deg_to_rads(-45))
+    print("rotate along x axis 45 deg CW")
+    print(m)
+    m = rotate(m,(0,1,0),deg_to_rads(-45))
+    print("rotate along y axis 45 deg CW")
+    print(m)
+    
+    
 
 if __name__ == '__main__':
     main()

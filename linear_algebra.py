@@ -153,20 +153,20 @@ class Matrix:
             list of all free variable vectors [t(1,1,0), s(4,0,1)] etc (without the t/s)     
         """
         m = [[self.data[i][j] for j in range(self.width())] for i in range(self.height())]
-        solution = [None for x in range(self.width()-1)]# [x1,x2...xn]
-        if free_index:# set a known free variable index to find a different solution
+        solution = [0 for x in range(self.width()-1)]# [x1,x2...xn]
+        if free_index != None:# set a known free variable index to find a different solution
             solution[free_index] = 1# set the free variable, e.g. t = 1 where x = (..,..,..) + t(..,..,..)
-        pivots, free_vars = [0]*(self.width()-1), [0]*(self.width()-1)
-        
+        pivots, free_vars = [0]*(self.width()-1), [1]*(self.width()-1)
+
         for y in range(self.height()-1,-1,-1):
-            if m[y] == [0] * self.width():
+            if m[y] == [0] * self.width():# zeroed row
                 continue
             else:
                 for x in range(self.width()-1):# A[y][0] -> A[y][-1]
                     if abs(m[y][x]) != 0:# found pivot point
                         break
                 pivot = m[y][x]
-                pivots[x] = 1# set the variable xn as constraint (not free)
+                pivots[x], free_vars[x] = 1, 0# set the variable xn as constraint (not free)
 
                 # zero all free variables (except the specified free_var) to get a simple solution
                 for j in range(x+1, self.width()-1):
@@ -178,15 +178,14 @@ class Matrix:
                 solution[x] = rhs / m[y][x]
 
 
-
         free_vectors = []# free variable equations
         if sum(free_vars) > 0 and free_index == None:# first function call calls for all children free variables
-            for i in range(len(free_vars)):
+            for i in range(len(free_vars)):                
                 if free_vars[i] == 1:
                     free_solution, _ = self.back_substitution(i)
                     free_vector = [free_solution[j] - solution[j] for j in range(len(solution))]
                     free_vectors.append(tuple(free_vector))
-            
+
         return tuple(solution), free_vectors
                 
     def determinant(self, method=1):
@@ -253,7 +252,7 @@ class Matrix:
         return output
 
 def main():
-    
+    import random
     print("eq, equals")
     tests = []
     tests.append(Matrix(3,4,16) == Matrix(3,4,16))
@@ -796,7 +795,7 @@ def main():
 
     print("data =",data_set[:3],"..",data_set[-3:])
     print(f"time:{time:.3f}s, calculated_height:{calculated_height(time,100,0):.3f}, px:{A.data[0][0]:.3f}m, py:{A.data[1][1]:.3f}m, vx:{A.data[0][0]:.3f}m/s, vy:{A.data[1][3]:.3f}m/s\n")
-    
+
     # using the normal equation A^T.A.x = A^T.b to solve [a,b,c]
     # y = ax^2 + bx + c
     a = []# A matrix
@@ -819,12 +818,9 @@ def main():
     augmented_A = ATA.augment(ATB.transpose().data[0])
     solution, _ = augmented_A.row_echelon_form().back_substitution()
     print(f"y = {solution[0]:.3f}x^2 + {solution[1]:.3f}x + {solution[2]:.3f}")
-    print(f"f(t) = (-9.81/2)t**2 + (v)t + h")
 
 
-
-
-    print("\nTransformations")
+    print("\nTransformations\n\n")
     def translate(m,x,y,z):
         """
         [1 0 0 x][x1]=[x1+x]
@@ -929,6 +925,156 @@ def main():
     print("rotate along y axis 45 deg CW")
     print(m)
     
+
+
+    
+    print("\n\nGeometric applications\n")
+    print("Parametric line equations to matrix form (hyperplane interception)\n")
+    """
+    four fundamental sub-spaces:
+        Column_space(A)
+        Row_space(A) == Column_space(A^T)
+        null_space(A)
+        null_space(A^T)
+
+        column_space == space spanned by the linearly independent cols == row space == rank      
+        null_space == space spanned by the linearly independent input vectors x such that Ax=0 (i.e. vectors x that are ignored by matrix A)
+        nullity == m - len(column_space) == len(null_space)
+
+        row(A) perp to null(A)
+        col(A) perp to null(A^T)
+
+    Therefore, consider a parametric line in n space as the null(A).
+        the lines perpendicular to null(A) can be used to form the rows of A
+
+        e.g. the line (0,0,0)+t(0,1,1)
+            form a matrix with the basis vectors of the subspace (in this case the line)
+            [0]
+            [1]      
+            [1]
+            transpose the matrix and solve for the nullspace to find the perpendicular subspace
+            [0 1 1 : 0] with free variables x=t, z=s
+                y = -s, x = t, z = s              
+                r = (0,0,0) + t(1,0,0) + s(0,-1,1)
+                    The nullspace basis vectors can be transposed to rows and form the matrix representing the original line
+                    [ 1 0 0 : 0]
+                    [-1 0 1 : 0]
+
+    """
+
+    def line_equation(start, direction):
+        """
+        Given a start, and direction tuple/vector.
+            Returns an augmented matrix representing the lines equation(s) in 'n' space
+                the null space of the matrix is the line itself, so any points on the line map to the matrix b
+                Therefore Ap=b where p is any point for p to lay on the line
+
+        line/vector to equation(s):
+        2D line == (2,3)+t(4,5)
+            x=2+4t, y=3+5t: t=(x-2)/4....y = 3 + 5((x-2)/4)
+                (a,b)+t(c,d) <-> y = b + d(x-a)/c <-> (y-b)c = d(x-a) == (y-b)/d = (x-a)/c
+                    in matrix form [x/c -y/d : a/c - b/d]             
+        """
+        A = Matrix(0,0,0,[direction])# solve for nullspace
+        b = [0]
+        A = A.augment(b)
+        _, space = A.row_echelon_form().back_substitution()
+
+        A=Matrix(0,0,0,space)
+        
+        b = [0 for x in space]
+        for i in range(len(b)):
+            for j in range(len(start)):
+                b[i] += start[j]*space[i][j]
+
+        return A.augment(b)
+    
+    def point_on_line(point, line_start, line_direction):
+        """
+        Given a parametric line, calculates the lines equation(s) in n space and confirms Ax==b where x is the point on the line
+
+        Alternatively the line direction could be used as a basis column vector A, b = point-line_start, and the system is solved At=b for t.
+            if consistent the point is on the line
+        """
+        line_eq = line_equation(line_start, line_direction)   
+       
+        A,b = line_eq.unaugment()
+        Ax = A*Matrix(0,0,0,[point]).transpose()
+        b = Matrix(0,0,0,[b]).transpose()
+
+        #print(f"\n3D point: {point}, line: r = {line_start} + t{line_direction} : {Ax == b}")
+        #print(line_eq)
+        return Ax == b
+
+
+    #####################################################################   
+    # various point on line tests #######################################
+    #####################################################################   
+    tests = []
+    def point_on_line_test(line_start, line_direction, tests):       
+        # test line start
+        tests.append(point_on_line(line_start, line_start, line_direction))
+        # test point on the line
+        point = [line_start[i] + -33*line_direction[i] for i in range(len(line_start))]
+        tests.append(point_on_line(point, line_start, line_direction))    
+        # test point not on the line
+        not_direction = [n for n in line_direction]
+        while not_direction == list(line_direction):
+            not_direction = [random.randint(-2**8,2**8) for n in line_direction]
+            
+        point = [line_start[i]-not_direction[i] for i in range(len(line_start))]
+        tests.append(point_on_line(point, line_start, line_direction) == False)
+
+    # testing if a point lies on a line in 2D
+    line_start = (2,3)
+    line_direction = (4,5)
+    point_on_line_test(line_start, line_direction, tests)
+
+    # testing if a point lies on a line in 3D
+    line_start = (2,3,4)
+    line_direction = (5,6,7)
+    point_on_line_test(line_start, line_direction, tests)
+  
+    # testing if a point lies on a line in 6D
+    line_start = (2,3,4,5,6,7)
+    line_direction = (8,9,10,11,12,13)
+    point_on_line_test(line_start, line_direction, tests)
+   
+    line_start = (0,0,0)
+    line_direction = (1,0,0)# x
+    point_on_line_test(line_start, line_direction, tests)
+
+    line_start = (0,0,0)
+    line_direction = (0,1,0)# y
+    point_on_line_test(line_start, line_direction, tests)
+
+    line_start = (0,0,0)
+    line_direction = (0,0,1)# z
+    point_on_line_test(line_start, line_direction, tests)
+
+    line_start = (1,2,3)
+    line_direction = (0,0,1)# x translated
+    point_on_line_test(line_start, line_direction, tests)
+
+    line_start = (1,2,3)
+    line_direction = (0,1,1)# xy translated
+    point_on_line_test(line_start, line_direction, tests)
+
+    line_start = (1,2,3)
+    line_direction = (1,0,1)# xz translated
+    point_on_line_test(line_start, line_direction, tests)
+
+    # random tests
+    for i in range(2**8):
+        n = random.randint(2,2**4)# dimension of the space
+        line_start = tuple([random.randint(-2**8,2**8) for i in range(n)])
+        line_direction = tuple([random.randint(-2**8,2**8) for i in range(n)])
+        point_on_line_test(line_start, line_direction, tests)
+    
+    print("line_equations\n",all(tests))
+    #####################################################################   
+    # various point on line tests########################################
+    #####################################################################   
     
 
 if __name__ == '__main__':

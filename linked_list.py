@@ -1,5 +1,3 @@
-#TODO when popping / removing tail need to do so in an efficient way to replace the tail with prev
-
 class Node:
     def __init__(self, val, next=None):
         self.val = val

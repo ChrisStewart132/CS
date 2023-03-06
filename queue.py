@@ -123,22 +123,14 @@ def main():
             llq_item = llq.dequeue().val
             cbq_item = cbq.dequeue()
             length -= 1
-            print(lq_item == dsq_item == llq_item == cbq_item == item, len(lq) == len(dsq) == len(llq) == len(cbq) == length)
-            tests.append(lq_item == dsq_item == llq_item == cbq_item == item and len(lq) == len(dsq) == len(llq) == len(cbq) == length)
-            print("",all(tests))
+            tests.append(lq_item == dsq_item == llq_item == cbq_item and len(lq) == len(dsq) == len(llq) == len(cbq) == length)
         else:
             lq.enqueue(item)
             dsq.enqueue(item)
             llq.enqueue(item)
             cbq.enqueue(item)
             length += 1
-            tests.append(len(lq) == len(dsq) == len(llq) == len(cbq) == length)
-            print("",all(tests))
-            
-        if not all(tests):
-            print(lq)
-            break
-        
+            tests.append(len(lq) == len(dsq) == len(llq) == len(cbq) == length)        
     print("",all(tests))
         
 
@@ -146,4 +138,3 @@ if __name__ == '__main__':
     # tests
     import random, time
     main()
-

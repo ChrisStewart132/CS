@@ -133,7 +133,6 @@ def main():
             tests.append(len(lq) == len(dsq) == len(llq) == len(cbq) == length)        
     print("",all(tests))
         
-
 if __name__ == '__main__':
     # tests
     import random, time

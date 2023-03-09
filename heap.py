@@ -1,20 +1,48 @@
 class Heap(object):
     """An abstract interface for a Heap."""
-    def __init__(self, items=[]):
+    def __init__(self, items=None, fast=True):
         # Create a list to store heap items.
         # First item is simply a spacer
         # Heap contents will start from index 1
-        self._items = [None]
-        self.slow_heapify(items)
+        if items:
+            if fast:
+                self.fast_heapify(items)
+            else:                  
+                self.slow_heapify(items)
+        else:
+            self._items = [None]    
 
     def slow_heapify(self, items):
         """insert initial items 1 at a time by appending each and sifting up"""
+        self._items = [None]    
         for item in items:
             self.insert(item)
+        return self._items
 
     def fast_heapify(self, items):
-        pass# not implemented here
+        """
+        heapify the given list, because a heap is bottom heavy it is more efficient (in terms of complexity) to instead sift down
 
+        However, sifting down during heapify is generally slower than sifting up because sifting up involves swapping the new element with its
+        parent repeatedly until it reaches its correct position. On the other hand, sifting down involves swapping the parent with one
+        of its children, then recursively sifting down that child until the heap property is restored. This process can involve more
+        swaps than sifting up, leading to slower performance.
+
+        Additionally, sifting down can lead to more cache misses since the elements being accessed are not in a contiguous memory location.
+        In contrast, sifting up accesses elements in a contiguous memory location, which can lead to better cache performance and faster execution.
+        """
+        self._items = items
+        self._items.append(None)# add None to back of items
+        self._items[-1], self._items[0] = self._items[0], self._items[-1]# swap None to the front of the heap
+        for i in range(len(self), 0, -1):
+            self._sift_down(i)
+        return self._items
+
+    def sorted(self):
+        """converts the heap into a reverse sorted array and returns it"""
+        for i in range(len(self)):
+            item = self.pop
+            
     def insert(self, item):       
         pass# not implemented here
 
@@ -74,7 +102,6 @@ class MinHeap(Heap):
         
         self._items[1], self._items[-1] = self._items[-1], self._items[1]#swap root and last item
         output = self._items.pop()
-        self._sift_down(1)
         self._sift_down(1)
         
         return output
@@ -142,7 +169,6 @@ class MinHeapIterative(Heap):
         
         self._items[1], self._items[-1] = self._items[-1], self._items[1]# swap root and last item
         output = self._items.pop()
-        self._sift_down(1)
         self._sift_down(1)
         
         return output
@@ -212,7 +238,6 @@ class MaxHeapIterative(Heap):
         
         self._items[1], self._items[-1] = self._items[-1], self._items[1]# swap root and last item
         output = self._items.pop()
-        self._sift_down(1)
         self._sift_down(1)
         
         return output
@@ -300,7 +325,7 @@ class Max_3_Heap(Heap):
         self._items[1], self._items[-1] = self._items[-1], self._items[1]# swap root and last item
         output = self._items.pop()
         self._sift_down(1)
-        self._sift_down(1)       
+       
         return output
     
     def _sift_down(self, index):
@@ -339,13 +364,33 @@ class Max_3_Heap(Heap):
 
 
 def main():
-    import random
+    import random, time
     min_heap = MinHeap()
     min_heap_iterative = MinHeapIterative()
     max_heap_iterative = MaxHeapIterative()
     max_heap = Max_3_Heap()
-    x = [random.randint(-2**8,2**8) for i in range(20)]
+    x = [random.randint(-2**8,2**8) for i in range(2**10)]
+
+    start = time.perf_counter() 
+    slow_heapified_heap = MinHeapIterative(x, False)
+    finish = time.perf_counter()
+    delta_t = finish - start
+    print("slow_heapify valid:", slow_heapified_heap.validate(), f", {delta_t:6f}s")
+
+
+    x_copy = [i for i in x]
+    start = time.perf_counter() 
+    fast_heapified_heap = MinHeapIterative(x_copy, True)
+    finish = time.perf_counter()
+    delta_t = finish - start
+    print("fast_heapify valid:", fast_heapified_heap.validate(), f", {delta_t:6f}s")
     
+    sorted_x_slow, sorted_x_fast = [], []
+    while len(slow_heapified_heap) > 0 and len(fast_heapified_heap) > 0:
+        sorted_x_slow.append(slow_heapified_heap.pop_min())
+        sorted_x_fast.append(fast_heapified_heap.pop_min())
+    print("slow == fast heapify:", sorted_x_slow==sorted_x_fast==sorted(x))
+
     # insert random integers into the heap(s)
     for n in x:
         min_heap.insert(n)
@@ -383,7 +428,7 @@ def main():
             print("max_heap error2")
             return -1
         sorted_max_heap.append(max_heap.pop_max())  
-    print("max heap:", sorted_max_heap == sorted(x, reverse=True))
+    print("max 3 heap:", sorted_max_heap == sorted(x, reverse=True))
 
     sorted_max_heap = []
     while not max_heap_iterative.isEmpty():

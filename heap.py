@@ -34,14 +34,18 @@ class Heap(object):
         self._items = items
         self._items.append(None)# add None to back of items
         self._items[-1], self._items[0] = self._items[0], self._items[-1]# swap None to the front of the heap
-        for i in range(len(self), 0, -1):
+        for i in range(len(self)//2, 0, -1):
             self._sift_down(i)
         return self._items
 
     def sorted(self):
-        """converts the heap into a reverse sorted array and returns it"""
-        for i in range(len(self)):
-            item = self.pop
+        """pops the heap to a sorted array"""
+        output = []
+        while len(self) > 0:
+            self._items[-1], self._items[1] = self._items[1], self._items[-1]# swap item at front of heap with rear         
+            output.append(self._items.pop())
+            self._sift_down(1)
+        return output
             
     def insert(self, item):       
         pass# not implemented here
@@ -365,31 +369,31 @@ class Max_3_Heap(Heap):
 
 def main():
     import random, time
+
+    # initialize heaps and an array of random integers
     min_heap = MinHeap()
     min_heap_iterative = MinHeapIterative()
     max_heap_iterative = MaxHeapIterative()
     max_heap = Max_3_Heap()
-    x = [random.randint(-2**8,2**8) for i in range(2**10)]
+    x = [random.randint(-2**8,2**8) for i in range(3**6)]
 
+    # slow heapify a new min heap with x
     start = time.perf_counter() 
     slow_heapified_heap = MinHeapIterative(x, False)
     finish = time.perf_counter()
     delta_t = finish - start
     print("slow_heapify valid:", slow_heapified_heap.validate(), f", {delta_t:6f}s")
 
-
+    # fast heapify a new min heap with a copy of x
     x_copy = [i for i in x]
     start = time.perf_counter() 
     fast_heapified_heap = MinHeapIterative(x_copy, True)
     finish = time.perf_counter()
     delta_t = finish - start
     print("fast_heapify valid:", fast_heapified_heap.validate(), f", {delta_t:6f}s")
-    
-    sorted_x_slow, sorted_x_fast = [], []
-    while len(slow_heapified_heap) > 0 and len(fast_heapified_heap) > 0:
-        sorted_x_slow.append(slow_heapified_heap.pop_min())
-        sorted_x_fast.append(fast_heapified_heap.pop_min())
-    print("slow == fast heapify:", sorted_x_slow==sorted_x_fast==sorted(x))
+
+    # confirm the slow and fast heaps when sorted == sorted(x)
+    print("slow.sorted == fast.sorted == sorted:", slow_heapified_heap.sorted()==fast_heapified_heap.sorted()==sorted(x))
 
     # insert random integers into the heap(s)
     for n in x:
@@ -406,37 +410,10 @@ def main():
             return -1
 
     # confirm that the heap pops in the correct order
-    sorted_min_heap = []
-    while not min_heap.isEmpty():
-        if not min_heap.validate():
-            print("min_heap error2")
-            return -1
-        sorted_min_heap.append(min_heap.pop_min())
-    print("min heap:", sorted_min_heap == sorted(x))
-
-    sorted_min_heap = []
-    while not min_heap_iterative.isEmpty():
-        if not min_heap_iterative.validate():
-            print("min_heap_iterative error2")
-            return -1
-        sorted_min_heap.append(min_heap_iterative.pop_min())
-    print("min heap iterative:", sorted_min_heap == sorted(x))
-    
-    sorted_max_heap = []
-    while not max_heap.isEmpty():
-        if not max_heap.validate():
-            print("max_heap error2")
-            return -1
-        sorted_max_heap.append(max_heap.pop_max())  
-    print("max 3 heap:", sorted_max_heap == sorted(x, reverse=True))
-
-    sorted_max_heap = []
-    while not max_heap_iterative.isEmpty():
-        if not max_heap_iterative.validate():
-            print("max_heap_iterative error2")
-            return -1
-        sorted_max_heap.append(max_heap_iterative.pop_max())  
-    print("max heap iterative:", sorted_max_heap == sorted(x, reverse=True))
+    print("min heap:", min_heap.sorted() == sorted(x))
+    print("min heap iterative:", min_heap_iterative.sorted() == sorted(x))   
+    print("max 3 heap:", max_heap.sorted() == sorted(x, reverse=True))
+    print("max heap iterative:", max_heap_iterative.sorted() == sorted(x, reverse=True))
 
 
 if __name__ == '__main__':

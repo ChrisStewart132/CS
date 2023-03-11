@@ -395,17 +395,11 @@ def chatGPT_quicksort(arr):
 
 def heap_sort(arr):
     h = heap.MinHeap(arr)
-    output = []
-    while not h.isEmpty():
-        output.append(h.pop_min())
-    return output
+    return h.sorted()
 
 def heap_sort_iterative(arr):
     h = heap.MinHeapIterative(arr)
-    output = []
-    while not h.isEmpty():
-        output.append(h.pop_min())
-    return output
+    return h.sorted()
 
 def tree_sort(arr):
     t = binary_search_tree.BinarySearchTree()

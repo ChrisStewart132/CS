@@ -1,4 +1,5 @@
 from queue import deque
+from heapq import *
 
 example_graph_string = '''\
 U 3 W
@@ -517,8 +518,7 @@ class Frontier():
         """
 
 class DFSFrontier(Frontier):
-    """Implements a frontier container appropriate for depth-first
-    search."""
+    """Implements a frontier container appropriate for depth-first-search."""
     def __init__(self):
         """The constructor takes no argument. It initialises the
         container to an empty stack."""
@@ -535,6 +535,43 @@ class DFSFrontier(Frontier):
         if len(self.container) > 0:
             next_path = self.container.pop()
             self.expanded.add(next_path[-1].head)# next_path has been returned to be expanded upon by generic_search calling graph.outgoing_arcs()
+            return next_path
+        else:
+            raise StopIteration
+class BFSFrontier(Frontier):
+    def __init__(self):
+        self.container = deque()
+        self.expanded = set()
+    def add(self, path):# path == Arc(tail='x', head='y', action='x->y', cost=1)
+        if path[-1].head not in self.expanded:
+            self.container.append(path)
+    def __iter__(self):
+        return self      
+    def __next__(self):
+        if len(self.container) > 0:
+            next_path = self.container.popleft()
+            self.expanded.add(next_path[-1].head)
+            return next_path
+        else:
+            raise StopIteration
+class LCFSFrontier(Frontier):
+    def __init__(self):
+        self.container = []# heap array/list
+        self.expanded = set()
+        self.size = 0# used to measure indices of items pushed into the heap (for stable sorting)
+    def add(self, path):
+        if path[-1].head not in self.expanded:
+            cost = sum([float(arc.cost) for arc in path]) + 0
+            #for arc in path:
+                #cost += float(arc.cost)
+            heappush(self.container, (cost, self.size, path))
+            self.size += 1
+    def __iter__(self):
+        return self        
+    def __next__(self):
+        if len(self.container) > 0:
+            next_path = heappop(self.container)[2]
+            self.expanded.add(next_path[-1].head)
             return next_path
         else:
             raise StopIteration
@@ -849,39 +886,32 @@ def main():
     adj_list = adjacency_list(graph_string)
     
     # generate dfs_tree parent array
-    _, parent, _ = dfs_tree(adj_list, 0)
-    path = _tree_path(parent, 0, 4)# get the path from the parent array from start to target
-    # extract action and cost from the path and adj_list
-    dfs_tree_actions = []
-    for i in range(1, len(path)):
-        source = path[i-1]
-        target = path[i]
-        action = str(source) + "->" + str(target)
-        cost = 1
-        for edge in adj_list[source]:
-            if edge[0] == target:
-                cost = edge[1]
-        dfs_tree_actions.append(action)
-        
-    print(dfs_tree_actions)
+    _, parent, _ = dfs_tree(adj_list, 0) 
+    print("dfs path:", _tree_path(parent, 0, 4))
+    print("bfs shortest_path:", shortest_path(adj_list, 0, 4))
+    print("dijkstra weighted_shortest_path:", weighted_shortest_path(adj_list, 0, 4))
+
     
-    frontier = DFSFrontier()
     # create inputs for the explicit graph function
     edges = []
     for i in range(len(adj_list)):# for each source node
         for j in range(len(adj_list[i])):# add each edge from the source node to all its neighbours
-            edges.append((str(i), str(adj_list[i][j][0]), adj_list[i][j][1]))
-            
-    nodes = set([str(n) for n in range(len(adj_list))])
-    
+            edges.append((str(i), str(adj_list[i][j][0]), adj_list[i][j][1]))           
+    nodes = set([str(n) for n in range(len(adj_list))])  
     graph = ExplicitGraph(
         nodes,
         edges,
         starting_nodes=['0'],
         goal_nodes={'4'}
     )
-
+    print("generic dfs search")
     solution = next(generic_search(graph, DFSFrontier()))
+    print_actions(solution)
+    print("generic bfs search")
+    solution = next(generic_search(graph, BFSFrontier()))
+    print_actions(solution)
+    print("generic lcfs search")
+    solution = next(generic_search(graph, LCFSFrontier()))
     print_actions(solution)
 
         

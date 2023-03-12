@@ -374,7 +374,185 @@ def _weighted_tree_path(parent, distance, s, t):
         return [(None, None)]
     elif s == t:
         return [(s, 0)]
-    return _weighted_tree_path(parent, distance, s, parent[t]) + [(t, distance[t])]   
+    return _weighted_tree_path(parent, distance, s, parent[t]) + [(t, distance[t])]
+
+
+
+"""
+implicit graphs specify outgoing_arcs or neighbouring_arcs from a particular node (e.g. a position x,y)
+allowing for endless graphs and graphs that arn't fully contained within memory (adj_list / adj_matrix)
+"""
+from collections import namedtuple
+
+def generic_search(graph, frontier):
+    for starting_node in graph.starting_nodes():
+        # Paths are tuples and the first arc on each path is a dummy arc to a starting node
+        frontier.add((Arc(None, starting_node, "no action", 0),)) 
+    
+    for path in frontier:
+        node_to_expand = path[-1].head # head of the last arc in the path
+
+        if graph.is_goal(node_to_expand):
+            yield path# continously supplies paths when called (e.g. generic_searc(g,f).next())
+
+        for arc in graph.outgoing_arcs(node_to_expand):
+            frontier.add(path + (arc,)) # add back a new extended path
+
+
+class Arc(namedtuple('Arc', 'tail, head, action, cost')):
+    """Represents an arc in a graph.
+
+    Keyword arguments:
+    tail -- the source node (state)
+    head -- the target node (state)
+    action -- a string describing the action that must be taken in
+             order to get from the source state to the destination state.
+    cost -- a number that specifies the cost of the action"""
+
+
+class Graph():
+    """This is an abstract class for graphs. It cannot be directly
+    instantiated. You should define a subclass of this class
+    (representing a particular problem) and implement the expected
+    methods."""
+
+    def is_goal(self, node):
+        """Returns true if the given node is a goal state, false otherwise."""
+
+    def starting_nodes(self):
+        """Returns a sequence of starting nodes. Often there is only one
+        starting node but even then the function returns a sequence
+        with one element. It can be implemented as an iterator if
+        needed."""
+
+    def outgoing_arcs(self, tail_node):
+        """Given a node it returns a sequence of arcs (Arc objects)
+        which correspond to the actions that can be taken in that
+        state (node)."""
+
+    def estimated_cost_to_goal(self, node):
+        """Return the estimated cost to a goal node from the given
+        state. This function is usually implemented when there is a
+        single goal state. The function is used as a heuristic in
+        search. The implementation should make sure that the heuristic
+        meets the required criteria for heuristics."""
+        raise NotImplementedError
+
+
+class ExplicitGraph(Graph):
+    """This is a concrete subclass of Graph where vertices and edges
+     are explicitly enumerated. Objects of this type are useful for
+     testing graph algorithms."""
+
+    def __init__(self, nodes, edge_list, starting_nodes, goal_nodes, estimates=None):
+        """Initialises an explicit graph.
+        Keyword arguments:
+        nodes -- a set of nodes
+        edge_list -- a sequence of tuples in the form (tail, head) or 
+                     (tail, head, cost)
+        starting_nodes -- the list of starting nodes. We use a list
+                          to remind you that the order can influence
+                          the search behaviour.
+        goal_node -- the set of goal nodes. It's better if you use a set
+                     here to remind yourself that the order does not matter
+                     here. This is used only by the is_goal method."""
+
+        # A few assertions to detect possible errors in
+        # instantiation. These assertions are not essential to the
+        # class functionality.
+        assert all(tail in nodes and head in nodes for tail, head, *_ in edge_list)\
+           , "An edge must link two existing nodes!"
+        assert all(node in nodes for node in starting_nodes),\
+            "The starting_states must be in nodes."
+        assert all(node in nodes for node in goal_nodes),\
+            "The goal states must be in nodes."
+
+        self.nodes = nodes      
+        self.edge_list = edge_list
+        self._starting_nodes = starting_nodes
+        self.goal_nodes = goal_nodes
+        self.estimates = estimates
+
+    def starting_nodes(self):
+        """Returns a sequence of starting nodes."""
+        return self._starting_nodes
+
+    def is_goal(self, node):
+        """Returns true if the given node is a goal node."""
+        return node in self.goal_nodes
+
+    def outgoing_arcs(self, node):
+        """Returns a sequence of Arc objects that go out from the given
+        node. The action string is automatically generated."""
+        arcs = []
+        for edge in self.edge_list:
+            if len(edge) == 2:  # if no cost is specified
+                tail, head = edge
+                cost = 1        # assume unit cost
+            else:
+                tail, head, cost = edge
+            if tail == node:
+                arcs.append(Arc(tail, head, str(tail) + '->' + str(head), cost))
+        return arcs
+
+class Frontier():
+    """This is an abstract class for frontier classes. It outlines the
+    methods that must be implemented by a concrete subclass. Concrete
+    subclasses determine the search strategy."""
+
+    def add(self, path):
+        """Adds a new path to the frontier. A path is a sequence (tuple) of
+        Arc objects. You should override this method.""" 
+    def __iter__(self):
+        """We don't need a separate iterator object. Just return self. You
+        don't need to change this method."""
+        return self
+    def __next__(self):
+        """
+        Selects, removes, and returns a path on the frontier if there is
+        any.Recall that a path is a sequence (tuple) of Arc
+        objects. Override this method to achieve a desired search
+        strategy. If there nothing to return this should raise a
+        StopIteration exception.
+        """
+
+class DFSFrontier(Frontier):
+    """Implements a frontier container appropriate for depth-first
+    search."""
+    def __init__(self):
+        """The constructor takes no argument. It initialises the
+        container to an empty stack."""
+        self.container = []
+        self.expanded = set()# keep track of nodes that have been expanded (i.e. its neighbouring nodes have been added to the frontier to be expanded)
+    def add(self, path):# path == Arc(tail='x', head='y', action='x->y', cost=1)
+        if path[-1].head not in self.expanded:# do not add paths to nodes which we have already expanded from
+            self.container.append(path)
+    def __iter__(self):
+        """The object returns itself because it is implementing a __next__
+        method and does not need any additional state for iteration."""
+        return self      
+    def __next__(self):
+        if len(self.container) > 0:
+            next_path = self.container.pop()
+            self.expanded.add(next_path[-1].head)# next_path has been returned to be expanded upon by generic_search calling graph.outgoing_arcs()
+            return next_path
+        else:
+            raise StopIteration
+        
+def print_actions(path):
+    """Given a path (a sequence of Arc objects), prints the actions that
+    need to be taken and the total cost of those actions. The path is
+    usually a solution (a path from the starting node to a goal
+    node."""
+    if path:
+        print("Actions:")
+        print(",\n".join("  {}".format(arc.action) for arc in path[1:]) + ".")
+        print("Total cost:", sum(arc.cost for arc in path))
+    else:
+        print("There is no solution!")
+
+
+
 
 def main():
     tests = []
@@ -663,6 +841,49 @@ def main():
     tests.append(weighted_shortest_path(adjacency_list(graph_string), 0, 4)[-1][1] == 11)# cost of the shortest path from 0->4
     tests.append(cycle_detection(adjacency_list(graph_string), "U"))
     print(all(tests), tests)
+
+
+
+
+    # comparing "generic graph search and explicit_graph" with "graph xxx_tree() and _tree_path()"
+    adj_list = adjacency_list(graph_string)
+    
+    # generate dfs_tree parent array
+    _, parent, _ = dfs_tree(adj_list, 0)
+    path = _tree_path(parent, 0, 4)# get the path from the parent array from start to target
+    # extract action and cost from the path and adj_list
+    dfs_tree_actions = []
+    for i in range(1, len(path)):
+        source = path[i-1]
+        target = path[i]
+        action = str(source) + "->" + str(target)
+        cost = 1
+        for edge in adj_list[source]:
+            if edge[0] == target:
+                cost = edge[1]
+        dfs_tree_actions.append(action)
+        
+    print(dfs_tree_actions)
+    
+    frontier = DFSFrontier()
+    # create inputs for the explicit graph function
+    edges = []
+    for i in range(len(adj_list)):# for each source node
+        for j in range(len(adj_list[i])):# add each edge from the source node to all its neighbours
+            edges.append((str(i), str(adj_list[i][j][0]), adj_list[i][j][1]))
+            
+    nodes = set([str(n) for n in range(len(adj_list))])
+    
+    graph = ExplicitGraph(
+        nodes,
+        edges,
+        starting_nodes=['0'],
+        goal_nodes={'4'}
+    )
+
+    solution = next(generic_search(graph, DFSFrontier()))
+    print_actions(solution)
+
         
 if __name__ == '__main__':
     main()

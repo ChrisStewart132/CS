@@ -23,6 +23,8 @@ def majority_element(labels):
     """returns the predicted variable most prevalent within the k variables, used for classification problems"""
     d = dict()
     for label in labels:
+        if isinstance(label, list):# convert lists/vectors to a tuple to allow for comparisons
+            label = tuple(label)
         if label not in d:
             d[label] = 1
         else:
@@ -118,8 +120,7 @@ def learn_prior(file_name, pseudo_count=0):
         temp = line[-1]
         #print(temp)
         if i > 0:
-            total += int(temp)
-        
+            total += int(temp)       
     return (total + pseudo_count) / (len(training_examples)-1 + pseudo_count*2)
 def learn_likelihood(file_name, pseudo_count=0):
     """
@@ -141,7 +142,6 @@ def learn_likelihood(file_name, pseudo_count=0):
                 output[i][1] += int(variable)              
             else:
                 output[i][0] += int(variable)
-
     for i in range(len(output)):
         output[i][1] += pseudo_count
         output[i][1] /= (class_var_true_count + pseudo_count*2)
@@ -173,46 +173,137 @@ artificial neurual network classification/regression:
 
     unknown input vectors parsed through network predicting output
 """
+# perceptron class
+
+# single perceptron training on dataset with max epochs
+
+# multi layer perceptrons MLP training
+
+
+# deep learning == neural network with many hidden layers instead of one
+
+    
+
     
 def main():
-    examples = [
-        ([2], '-'),
-        ([3], '-'),
-        ([5], '+'),
-        ([8], '+'),
-        ([9], '+'),
-    ]
-    print("classification training data")
-    for example in examples:
-        print(example)
-    distance = euclidean_distance
-    combine = majority_element
-    for k in range(1, 4, 2):
-        print("k =", k)
-        print("x", "prediction")
-        for x in range(0,10):
-            print(x, knn_predict([x], examples, distance, combine, k))
-            
-    examples = [
-        ([1], 5),
-        ([2], -1),
-        ([5], 1),
-        ([7], 4),
-        ([9], 8),
-    ]
-    print("regression training data")
-    for example in examples:
-        print(example)
-    distance = euclidean_distance
-    combine = average
-    for k in range(1, 4, 2):
-        print("k =", k)
-        print("x", "prediction")
-        for x in range(0,10):
-            print("{} {:4.2f}".format(x, knn_predict([x], examples, distance, combine, k)))
+    # training set (classify positive and negative integers between -2**8<->2**8-1
+    sorted_signed_integers = sorted([random.randint(-2**8,(2**8)-1) for i in range((((2**8)-1)+2**8) // 16)])
+    signed_integer_data_set = []# tuple (input_vector, output_vector)
+    for n in sorted_signed_integers:
+        input, output = [n], ['+'] if n >= 0 else ['-']
+        signed_integer_data_set.append((input, output))
 
-    # a training set of y=x**2 from 0-20
-    print("predicting values outside of the range of the data-set fails")
+    training_set, testing_set = [], []# training set is 2/3 of the entire data set, testing set is 1/3
+    for i, example in enumerate(signed_integer_data_set):
+        if i % 3 == 2:
+            testing_set.append(example)
+        else:
+            training_set.append(example)            
+    print("\n\nsigned integer classification data_set")
+    print(signed_integer_data_set)  
+    print("\nsigned integer classification training_set")
+    print(training_set)
+    print("\nsigned integer classification testing_set")
+    print(testing_set,'\n')
+
+    # confirm that the machine learning algorithms accurately predict the testing set after being trained
+    k = 3
+    print("k-NN: k =", k)
+    print("x", "prediction testing")
+    accuracy = 0
+    for input, output in testing_set:
+        predicted_output = knn_predict(input, training_set, euclidean_distance, majority_element, k)
+        print(input, predicted_output, predicted_output == tuple(output))
+        accuracy += 1 if predicted_output == tuple(output) else 0
+    accuracy /= len(testing_set)
+    print("accuracy:", accuracy*100,"%")
+
+
+
+    # multi dimensional input with single output variable
+    # training set (classify positive and negative integers between -2**8<->2**8-1
+    signed_integers = [[random.randint(-2**8,(2**8)-1) for j in range(3)] for i in range((((2**8)-1)+2**8) // 16)]
+    sorted_signed_integers = sorted(signed_integers, key=lambda x:(x[0], x[1], x[2]))
+    signed_integer_data_set = []# tuple (input_vector, output_vector)
+    for n in sorted_signed_integers:
+        input = n
+        output = '+-'# +, -, or +-
+        if all([x>=0 for x in input]):
+            output = '+'
+        elif all([x<0 for x in input]):
+            output = '-'
+        signed_integer_data_set.append((input, [output]))
+
+    training_set, testing_set = [], []# training set is 2/3 of the entire data set, testing set is 1/3
+    for i, example in enumerate(signed_integer_data_set):
+        if i % 3 == 1:
+            testing_set.append(example)
+        else:
+            training_set.append(example)
+    print("\n\nsigned integer classification data_set")
+    print(signed_integer_data_set)  
+    print("\nsigned integer classification training_set")
+    print(training_set)
+    print("\nsigned integer classification testing_set")
+    print(testing_set,'\n')
+
+    # confirm that the machine learning algorithms accurately predict the testing set after being trained
+    k = 3
+    print("k-NN: k =", k)
+    print("x", "prediction testing")
+    accuracy = 0
+    for input, output in testing_set:
+        predicted_output = knn_predict(input, training_set, euclidean_distance, majority_element, k)
+        print(input, predicted_output, predicted_output == tuple(output))
+        accuracy += 1 if predicted_output == tuple(output) else 0
+    accuracy /= len(testing_set)
+    print("accuracy:", accuracy*100,"%")
+
+
+    
+    # multi dimensional input and output vectors
+    # training set (classify positive and negative integers between -2**8<->2**8-1
+    signed_integers = [[random.randint(-2**8,(2**8)-1) for j in range(3)] for i in range((((2**8)-1)+2**8) // 16)]
+    sorted_signed_integers = sorted(signed_integers, key=lambda x:(x[0], x[1], x[2]))
+    signed_integer_data_set = []# tuple (input_vector, output_vector)
+    for n in sorted_signed_integers:
+        input = n
+        output = ['+' if x >= 0 else '-' for x in n]
+        signed_integer_data_set.append((input, output))
+
+    training_set, testing_set = [], []# training set is 2/3 of the entire data set, testing set is 1/3
+    for i, example in enumerate(signed_integer_data_set):
+        if i % 3 == 1:
+            testing_set.append(example)
+        else:
+            training_set.append(example)
+    print("\n\nsigned integer classification data_set")
+    print(signed_integer_data_set)  
+    print("\nsigned integer classification training_set")
+    print(training_set)
+    print("\nsigned integer classification testing_set")
+    print(testing_set,'\n')
+
+    # confirm that the machine learning algorithms accurately predict the testing set after being trained
+    k = 3
+    print("k-NN: k =", k)
+    print("x", "prediction testing")
+    accuracy = 0
+    for input, output in testing_set:
+        predicted_output = knn_predict(input, training_set, euclidean_distance, majority_element, k)
+        print(input, predicted_output, predicted_output == tuple(output))
+        accuracy += 1 if predicted_output == tuple(output) else 0
+    accuracy /= len(testing_set)
+    print("accuracy:", accuracy*100,"%")
+
+
+
+
+
+
+
+    print("\n\nregression training data")
+    # a training set of y=x**2 from 0-20  
     examples = []
     for x in range(0,20,2):
         y = x**2
@@ -221,16 +312,17 @@ def main():
         example = (input_vector, output_variable)
         examples.append(example)
     print("y=x**2 regression training data")
-    for example in examples:
-        print(example)
-    distance = euclidean_distance
-    combine = average
-    for k in range(2,4,5):
-        print("k =", k)
-        print("x", "prediction")
-        for x in range(0,30,5):
-            print("{} {:4.2f}".format(x, knn_predict([x], examples, distance, combine, k)))
+    print(examples)
+    k=3
+    print("k =", k)
+    print("x", "prediction", "accuracy(distance)")
+    for x in range(0,30,5):
+        predicted_output = knn_predict([x], examples, euclidean_distance, average, k)
+        print("{} {:4.2f} {:.2f}".format(x, predicted_output, abs(x**2-predicted_output)))
+    print("\npredicting values outside of the range of the data set is in-accurate")
 
+
+            
 if __name__ == '__main__':
     import random
     main()

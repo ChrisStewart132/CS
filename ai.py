@@ -186,7 +186,7 @@ def construct_perceptron(weights, bias=0.5, type=0):
         def perceptron(input):# multi-classification perceptron, outputs {probability_n for n in input} using softmax activation function
             #sigmoid function takes input x, outputs y from 0 < y < 1 
                 # f(x) = 1/(1+e**-x), where e = 2.71828, x <= -6 maps to 0, x >= 6 maps to 1...(f(0) = 0.5)
-            output = sum([weights[i]*input[i] for i in range(len(weights))])
+            output = sum([weights[i]*input[i] for i in range(len(weights))]) + bias
             output = min(output, 6) if output > 6 else output
             output = max(output, -6) if output < -6 else output
             return 1/(1+(2.71828**-output))# activation function 
@@ -327,6 +327,50 @@ def main():
     print("accuracy:", accuracy*100,"%")
 
 
+
+    # ANN (Artificial Neural Network) MLP (multi-layer perceptrons)
+    print("\nANN (Artificial Neural Network)  MLP (multi-layer perceptrons)")
+
+    # 3 input variables, 1 output variable, therefore 3 inputs -> 3 hidden perceptron -> 1 output perceptron
+
+    # 3 hidden perceptrons, each take in the original input vector and output 0<->1
+    p1 = construct_perceptron([6,0,0], 0, 1)# outputs x1 mapped to 0<->1, < 0.5 implies x1 is negative, >= 0.5 implies x1 positive
+    p2 = construct_perceptron([0,6,0], 0, 1)# p2 and p3 follow the same logic but for x2, and x3 respectively
+    p3 = construct_perceptron([0,0,6], 0, 1)
+
+    # output perceptron has three inputs each in the range from 0<->1, it outputs whether the original input is all positve,all negative,or neither(+-)
+    output_perceptron = construct_perceptron([1,1,1], 0, 1)# all inputs are in the range 0<->1
+        # therefore max input = sigmoid(3) ~= 0.95, min output = 0.5
+        # for simplicity, <0.55 == -, > 0.9==+, else +-
+
+    hidden_perceptrons = [p1,p2,p3]
+    accuracy = 0
+    for input, output in testing_set:      
+        hidden_outputs = []
+        for i in range(len(hidden_perceptrons)):# for each hidden perceptron
+            hidden_outputs.append(hidden_perceptrons[i](input))
+        predicted_output = output_perceptron(hidden_outputs)
+        symbol = '+-'
+        if predicted_output < 0.55:
+            symbol = '-'
+        elif predicted_output > 0.9:
+            symbol = '+'
+        accuracy += 1 if symbol == output[0] else 0
+        print(input, symbol, symbol==output[0]) 
+    print("accuracy:", (accuracy/len(testing_set))*100, "%")
+
+
+
+
+
+
+
+
+
+
+
+
+    
     # multi dimensional input and output vectors
     # training set (classify positive and negative integers between -2**8<->2**8-1
     signed_integers = [[random.randint(-2**8,(2**8)-1) for j in range(3)] for i in range((((2**8)-1)+2**8) // 16)]
@@ -363,6 +407,37 @@ def main():
     print("accuracy:", accuracy*100,"%")
 
 
+    # ANN (Artificial Neural Network) MLP (multi-layer perceptrons)
+    print("\nANN (Artificial Neural Network)  MLP (multi-layer perceptrons)")
+
+    # 3 input variables, 3 output variable, therefore 3 inputs -> 3 hidden perceptron -> 3 output perceptrons
+
+    # 3 hidden perceptrons, each take in the original input vector and output 0<->1
+    p1 = construct_perceptron([6,0,0], 0, 1)# outputs x1 mapped to 0<->1, < 0.5 implies x1 is negative, >= 0.5 implies x1 positive
+    p2 = construct_perceptron([0,6,0], 0, 1)# p2 and p3 follow the same logic but for x2, and x3 respectively
+    p3 = construct_perceptron([0,0,6], 0, 1)
+    # 3 output perceptrons
+    o1 = construct_perceptron([6,0,0], -0.5, 1)# output perceptrons recieve 0<->1 so bias of -0.5 to make the range -0.5<->0.5
+    o2 = construct_perceptron([0,6,0], -0.5, 1)
+    o3 = construct_perceptron([0,0,6], -0.5, 1)
+
+    hidden_perceptrons = [p1,p2,p3]
+    output_perceptrons = [o1,o2,o3]
+    accuracy = 0
+    for input, output in testing_set:      
+        hidden_outputs = []
+        for i in range(len(hidden_perceptrons)):# for each hidden perceptron
+            hidden_outputs.append(hidden_perceptrons[i](input))
+            
+        predicted_outputs = []
+        for i in range(len(output_perceptrons)):
+            predicted_output = output_perceptrons[i](hidden_outputs)
+            symbol = '+' if predicted_output >= 0.5 else '-'
+            predicted_outputs.append(symbol)
+
+        accuracy += 1 if predicted_outputs == output else 0
+        print(input, predicted_outputs, predicted_outputs==output) 
+    print("accuracy:", (accuracy/len(testing_set))*100, "%")
 
 
 

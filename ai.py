@@ -173,16 +173,48 @@ artificial neurual network classification/regression:
 
     unknown input vectors parsed through network predicting output
 """
-# perceptron class
+def construct_perceptron(weights, bias=0.5, type=0):
+    """Returns a perceptron function using the given paramers."""
+    if type == 0:
+        def perceptron(input):# binary classification perceptron, outsputs {0,1}
+            output = sum([weights[i]*input[i] for i in range(len(weights))])
+            # Note: we are masking the built-in input function but that is
+            # fine since this only happens in the scope of this function and the
+            # built-in input is not needed here.
+            return int(output + bias >= 0)# activation function
+    else:
+        def perceptron(input):# multi-classification perceptron, outputs {probability_n for n in input} using softmax activation function
+            #sigmoid function takes input x, outputs y from 0 < y < 1 
+                # f(x) = 1/(1+e**-x), where e = 2.71828, x <= -6 maps to 0, x >= 6 maps to 1...(f(0) = 0.5)
+            output = sum([weights[i]*input[i] for i in range(len(weights))])
+            output = min(output, 6) if output > 6 else output
+            output = max(output, -6) if output < -6 else output
+            return 1/(1+(2.71828**-output))# activation function 
+    return perceptron # this line is fine
 
-# single perceptron training on dataset with max epochs
+def perceptron_accuracy(classifier, inputs, expected_outputs):
+    """classifier=perceptron(input) function, inputs = list of input vectors, expected_outputs = list of corresponding output variables/vectors"""
+    outputs = [1 if x[0] == '+' else 0 for x in expected_outputs]# convert expected_outs to binary {0,1} domain to compare with binary perceptron
+    comparisons = []
+    for i in range(len(inputs)):
+        prediction = '+' if classifier(inputs[i]) == 1 else '-'
+        print(inputs[i], prediction, outputs[i] == classifier(inputs[i]))
+        comparisons.append(outputs[i] == classifier(inputs[i]))
+    return (sum(comparisons) / len(comparisons))*100
 
-# multi layer perceptrons MLP training
+def learn_perceptron_parameters(weights, bias, training_examples, learning_rate=0.1, max_epochs=1):
+    for epoch in range(max_epochs):# for each cycles / repition of learning
+        for example in training_examples:# for each test case
+            perceptron = construct_perceptron(weights, bias)
+            x = example[0]# real input vector
+            t = 1 if example[1][0] == '+' else 0# real output 
+            y = perceptron(x)# predicted output
+            for i in range(len(x)):# for each input variable adjust its associated weight       
+                weights[i] += learning_rate*x[i]*(t-y)# weight vector corrected / learning
+            bias += learning_rate*(t-y)# bias corrected / learning
+    return weights, bias# return the corrected weights vector and bias to construct a new perceptron for making predictions
 
 
-# deep learning == neural network with many hidden layers instead of one
-
-    
 
     
 def main():
@@ -199,7 +231,7 @@ def main():
             testing_set.append(example)
         else:
             training_set.append(example)            
-    print("\n\nsigned integer classification data_set")
+    print("signed integer classification data_set")
     print(signed_integer_data_set)  
     print("\nsigned integer classification training_set")
     print(training_set)
@@ -207,8 +239,10 @@ def main():
     print(testing_set,'\n')
 
     # confirm that the machine learning algorithms accurately predict the testing set after being trained
+    
+    # k-NN (k Nearest Neighbours)
     k = 3
-    print("k-NN: k =", k)
+    print("k-NN (k Nearest Neighbours): k =", k)
     print("x", "prediction testing")
     accuracy = 0
     for input, output in testing_set:
@@ -217,6 +251,39 @@ def main():
         accuracy += 1 if predicted_output == tuple(output) else 0
     accuracy /= len(testing_set)
     print("accuracy:", accuracy*100,"%")
+
+
+
+    # ANN (Artificial Neural Network)
+    print("\nANN (Artificial Neural Network)")
+    
+    # initialize weights vector and bias value to any random number(s)
+    weights, bias = [random.randint(-10,10) for x in range(len(testing_set[0][0]))], random.randint(-10,10)
+    print("initial", "weights:", weights, "bias:", bias)
+    
+    # train the perceptron on the training_set and return the calibrates weights vector and bias value
+    weights, bias = learn_perceptron_parameters(weights, bias, training_set, learning_rate=0.5, max_epochs=500)
+    print("trained", "weights:", weights, "bias:", bias)
+    
+    # construct a perceptron with the trained weights vector and bias value
+    perceptron = construct_perceptron(weights, bias)
+
+    # extract the testing_inputs and testing_outputs from the testing set
+    testing_inputs, testing_outputs = [x[0] for x in testing_set], [x[1] for x in testing_set]
+
+    # test how accurately the single perceptron is able to predict the sign of an integer
+    accuracy = perceptron_accuracy(perceptron, testing_inputs, testing_outputs)
+    print("accuracy:", accuracy, "%")
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -240,7 +307,7 @@ def main():
             testing_set.append(example)
         else:
             training_set.append(example)
-    print("\n\nsigned integer classification data_set")
+    print("\n\n\nsigned integer classification data_set")
     print(signed_integer_data_set)  
     print("\nsigned integer classification training_set")
     print(training_set)
@@ -260,7 +327,6 @@ def main():
     print("accuracy:", accuracy*100,"%")
 
 
-    
     # multi dimensional input and output vectors
     # training set (classify positive and negative integers between -2**8<->2**8-1
     signed_integers = [[random.randint(-2**8,(2**8)-1) for j in range(3)] for i in range((((2**8)-1)+2**8) // 16)]
@@ -277,7 +343,7 @@ def main():
             testing_set.append(example)
         else:
             training_set.append(example)
-    print("\n\nsigned integer classification data_set")
+    print("\n\n\nsigned integer classification data_set")
     print(signed_integer_data_set)  
     print("\nsigned integer classification training_set")
     print(training_set)
@@ -302,7 +368,7 @@ def main():
 
 
 
-    print("\n\nregression training data")
+    print("\n\n\nregression training data")
     # a training set of y=x**2 from 0-20  
     examples = []
     for x in range(0,20,2):
@@ -319,8 +385,6 @@ def main():
     for x in range(0,30,5):
         predicted_output = knn_predict([x], examples, euclidean_distance, average, k)
         print("{} {:4.2f} {:.2f}".format(x, predicted_output, abs(x**2-predicted_output)))
-    print("\npredicting values outside of the range of the data set is in-accurate")
-
 
             
 if __name__ == '__main__':

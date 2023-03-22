@@ -1,3 +1,8 @@
+"""
+KdTree and QuadTree implementations for 2D points
+"""
+MAX_DEPTH = 10# node max depth, at max depth the leaf node will append all nodes to a list
+
 import matplotlib.pyplot as plt
 from collections import namedtuple
 
@@ -11,13 +16,12 @@ def binary_search_tree(nums, is_sorted=False):
     """
     if not is_sorted:
         nums = sorted(nums)
-        print(nums)
+        
     n = len(nums)
     if n == 1:
         tree = Node(nums[0], None, None)  # A leaf
     else:
         mid = n // 2  # Halfway (approx)
-        print(nums[mid-1],len(nums[:mid]),len(nums[mid:]))
         left = binary_search_tree(nums[:mid], True)
         right = binary_search_tree(nums[mid:], True)
         tree = Node(nums[mid - 1], left, right)
@@ -91,11 +95,17 @@ class Vec:
         return self.x if axis == 0 else self.y
 
     def __repr__(self):
-        return "({}, {})".format(self.x, self.y)
+        return "Vec({}, {})".format(self.x, self.y)
 
     def __lt__(self, other):
         """Less than operator, for sorting"""
         return (self.x, self.y) < (other.x, other.y)
+
+    def __eq__(self, other):
+        if isinstance(other, Vec):
+            return self.x == other.x and self.y == other.y 
+        else:
+            return False
 
 # with slicing   
 class KdTree:
@@ -103,7 +113,7 @@ class KdTree:
     LABEL_POINTS = True
     LABEL_OFFSET_X = 0.25
     LABEL_OFFSET_Y = 0.25    
-    def __init__(self, points, depth=0, max_depth=10):
+    def __init__(self, points, depth=0, max_depth=MAX_DEPTH):
         """Initialiser, given a list of points, each of type Vec, the current
            depth within the tree (0 for root), used during recursion, and the
            maximum depth allowable for a leaf node.
@@ -184,7 +194,6 @@ class QuadTree:
     """A QuadTree class for COSC262.
        Richard Lobb, May 2019
     """
-    MAX_DEPTH = 20
     def __init__(self, points, centre, size, depth=0, max_leaf_points=2):
         self.centre = centre
         self.size = size
@@ -249,12 +258,37 @@ class QuadTree:
         
 def main():
     import random
+    
+    # kdTree tests
+    tests = []
     point_tuples = [(1, 3), (10, 20), (5, 19), (0, 11), (15, 22), (30, 5)]
     points = [Vec(*tup) for tup in point_tuples]
     tree = KdTree(points)
+
+    bottom_left, top_right = Vec(0,0), Vec(40,40)
+    rectangle = bottom_left, top_right
+    test = sorted(tree.points_in_range(rectangle)) == sorted(points)
+    tests.append(test)
+    print("points_in_range", rectangle, test)
+
+    rectangle = Vec(0,0), Vec(5,5)
+    test = sorted(tree.points_in_range(rectangle)) == sorted([Vec(1,3)])
+    tests.append(test)
+    print("points_in_range", rectangle, test)
+
+    rectangle = Vec(5,15), Vec(15,21)
+    test = sorted(tree.points_in_range(rectangle)) == sorted([Vec(5,19), Vec(10,20)])
+    tests.append(test)
+    print("points_in_range", rectangle, test)
+
+    print("\n kdTree:", all(tests))
+        
     axes = plt.axes()
     tree.plot(axes, 25, 35, 0, 0)
     plt.show()
+
+
+    return
     
     point_tuples = [(1, 3), (10, 20), (5, 19), (0, 11), (15, 22), (30, 5)]
     points = [Vec(*tup) for tup in point_tuples]
@@ -319,7 +353,7 @@ def main():
     plt.show()
 
     nums = [22, 41, 19, 27, 12, 35, 14, 20,  39, 10, 25, 44, 32, 21, 18]
-    #nums = [15, 3, 11, 21, 7, 0, 19, 33, 29, 4]
+    nums = [15, 3, 11, 21, 7, 0, 19, 33, 29, 4]
     nums = [228]
     nums = [228, 227, 3]
     tree = binary_search_tree(nums)

@@ -53,6 +53,9 @@ class Heap(object):
     def isEmpty(self):
         return len(self) == 0
 
+    def __contains__(self, value):
+        return value in self._items
+
     def __len__(self):
         """Returns the actual length of the heap,
         ie, how many items are in the heap
@@ -138,6 +141,17 @@ class MinHeap(Heap):
                 return False
         return True
 
+    def __contains__(self, value):
+        return self.contains(value)
+
+    def contains(self, value, i=1):
+        if i >= len(self._items) or self._items[i] > value:# for a min heap if current_val > val, deeper nodes will be aswell
+            return False
+        if self._items[i] == value:
+            return True
+        else:
+            return self.contains(value, i*2) or self.contains(value, i*2+1)
+
 class MinHeapIterative(Heap):
     """Implementation of a min-heap."""
     def insert(self, item):
@@ -207,6 +221,22 @@ class MinHeapIterative(Heap):
                 return False
         return True
 
+    def __contains__(self, value):
+        stack = [1]
+        while len(stack) > 0:
+            i = stack.pop()
+            if i >= len(self._items):
+                continue
+            
+            if self._items[i] == value:
+                return True
+            elif self._items[i] > value:
+                continue# child_nodes > value
+            else:
+                stack.append(i*2)
+                stack.append(i*2+1)
+        return False
+
 
 class MaxHeapIterative(Heap):
     """Implementation of a min-heap."""
@@ -274,6 +304,9 @@ class MaxHeapIterative(Heap):
             if self._items[i] > self._items[i//2]:
                 return False
         return True
+
+    
+        
 
 class Max_3_Heap(Heap):
     """Implementation of a max-three-heap.
@@ -408,6 +441,25 @@ def main():
         if not max_heap.validate() or not max_heap_iterative.validate():
             print("max_heap(s) error1")
             return -1
+
+    # testing heap __contains__ methods
+    start = time.perf_counter() 
+    test = all([x in min_heap for x in min_heap._items[1:]])# recursive __contains__
+    finish = time.perf_counter()
+    delta_t = finish - start
+    print("min_heap contains(recursive):", test, f"{delta_t:.4f}s")
+    
+    start = time.perf_counter() 
+    test = all([x in min_heap_iterative for x in min_heap_iterative._items[1:]])# iterative stack __contains__
+    finish = time.perf_counter()
+    delta_t = finish - start
+    print("min_heap_iterative contains(iterative stack):", test, f"{delta_t:.4f}s")
+
+    start = time.perf_counter() 
+    test = all([x in max_heap for x in max_heap._items[1:]])# array O(n) __contains__
+    finish = time.perf_counter()
+    delta_t = finish - start
+    print("max_heap contains(in array):", test, f"{delta_t:.4f}s")
 
     # confirm that the heap pops in the correct order
     print("min heap:", min_heap.sorted() == sorted(x))

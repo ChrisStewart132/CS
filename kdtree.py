@@ -1,5 +1,5 @@
 """
-KdTree and QuadTree implementations for 2D points
+Grid(TODO), QuadTree(WIP), and KdTree range searching data structure implementations for 2D points
 """
 MAX_DEPTH = 10# node max depth, at max depth the leaf node will append all nodes to a list
 
@@ -191,42 +191,47 @@ class KdTree:
 
 
 class QuadTree:
-    """A QuadTree class for COSC262.
-       Richard Lobb, May 2019
     """
-    def __init__(self, points, centre, size, depth=0, max_leaf_points=2):
-        self.centre = centre
-        self.size = size
-        self.depth = depth
-        self.max_leaf_points = max_leaf_points
-        self.children = []
-        self.points = []
-        self.is_leaf = False
-
+    WIP
+    """
+    def __init__(self, points, centre, size, depth=0, max_leaf_points=2, max_depth=MAX_DEPTH):
+        self.centre = centre                    # centre of the current quadrant
+        self.size = size                        # diameter or length of base / column
+        self.depth = depth                      # current tree depth (root depth==0)
+        self.max_leaf_points = max_leaf_points  # max allowed points on a leaf node below max_depth
+        self.max_depth = max_depth              # max QuadTree/node depth allowed
+        self.children = []                      # child QuadTrees/nodes
+        self.points = []                        # points within this quadtree/node
+        self.is_leaf = False                    # all nodes contain a list of points within their quadrant
+                                                    
+        
         r = self.size / 2
         bottom_left = Vec(self.centre.x-r, self.centre.y-r)
         top_right = Vec(self.centre.x+r, self.centre.y+r)
         
-        for point in points:
+        for point in points:# get points within the current quadrant
             if point.in_box(bottom_left, top_right):
                 self.points.append(point)
-
-        if len(self.points) > max_leaf_points and self.depth < self.MAX_DEPTH:
-            for i in range(4):
-                if i < 2:#left
-                    x = centre.x - size / 4
-                else:#right
-                    x = centre.x + size / 4
-                if i % 2 == 0:#bottom
-                    y = centre.y - size / 4
-                else:#top
-                    y = centre.y + size / 4
+                
+        if len(self.points) > max_leaf_points and self.depth < self.max_depth:# divide points into sub-quadrants
+            for i in range(4):# (i=0: bottom left, i=1: top left, i=2: bottom right, i=3: top right)
+                if i < 2:       
+                    x = centre.x - size / 4# left
+                else:           
+                    x = centre.x + size / 4# right
+                if i % 2 == 0:  
+                    y = centre.y - size / 4# bottom
+                else:           
+                    y = centre.y + size / 4# top
                 child_centre = Vec(x, y)
                 child_size = self.size / 2
                 child = QuadTree(self.points, child_centre, child_size, depth + 1, max_leaf_points)
                 self.children.append(child)
-        else:
+        else:# leaf node reached (no more division necessary or maximum depth reached)
             self.is_leaf = True
+
+    def points_in_range(self, rectangle):
+        return
 
     def plot(self, axes):
         """Plot the dividing axes of this node and
@@ -255,70 +260,68 @@ class QuadTree:
             s += indent + '])'
             return s
 
+class Grid:
+    """
+    TODO
+    """
+    def __init__(self, points):
+        return
         
 def main():
     import random
     
     # kdTree tests
+    print("KdTree tests")
     tests = []
     point_tuples = [(1, 3), (10, 20), (5, 19), (0, 11), (15, 22), (30, 5)]
     points = [Vec(*tup) for tup in point_tuples]
     tree = KdTree(points)
-
+    
     bottom_left, top_right = Vec(0,0), Vec(40,40)
     rectangle = bottom_left, top_right
-    test = sorted(tree.points_in_range(rectangle)) == sorted(points)
+    test = sorted(tree.points_in_range(rectangle)) == sorted(points)# all points in range
     tests.append(test)
-    print("points_in_range", rectangle, test)
+    #print("points_in_range", rectangle, test, tree.points_in_range(rectangle))
 
     rectangle = Vec(0,0), Vec(5,5)
     test = sorted(tree.points_in_range(rectangle)) == sorted([Vec(1,3)])
     tests.append(test)
-    print("points_in_range", rectangle, test)
+    #print("points_in_range", rectangle, test, tree.points_in_range(rectangle))
 
     rectangle = Vec(5,15), Vec(15,21)
     test = sorted(tree.points_in_range(rectangle)) == sorted([Vec(5,19), Vec(10,20)])
     tests.append(test)
-    print("points_in_range", rectangle, test)
+    #print("points_in_range", rectangle, test, tree.points_in_range(rectangle))
 
-    print("\n kdTree:", all(tests))
-        
+    rectangle = Vec(15,22), Vec(25,25)
+    test = sorted(tree.points_in_range(rectangle)) == sorted([Vec(15, 22)])
+    tests.append(test)
+    #print("points_in_range", rectangle, test, tree.points_in_range(rectangle))
+
+    rectangle = Vec(-1,-1), Vec(-999,-999)
+    test = sorted(tree.points_in_range(rectangle)) == sorted([])# no points in range
+    tests.append(test)
+    #print("points_in_range", rectangle, test, tree.points_in_range(rectangle))
+
+    print(" KdTree:", all(tests))    
     axes = plt.axes()
     tree.plot(axes, 25, 35, 0, 0)
     plt.show()
 
 
-    return
-    
-    point_tuples = [(1, 3), (10, 20), (5, 19), (0, 11), (15, 22), (30, 5)]
-    points = [Vec(*tup) for tup in point_tuples]
-    tree = KdTree(points)
-    in_range = tree.points_in_range((Vec(0, 3), Vec(5, 19)))
-    print(sorted(in_range))
-    
-    random.seed(1234567)
-    try:
-        n = Vec.box_calls
-    except AttributeError:
-        print("You must use the pre-loaded version of the Vec class in this question.")
-        print("It has an in_box method that counts calls to it.")
-        
-    Vec.box_calls = 0
-    point_tuples = [(int(10000 * random.random()), int(10000 * random.random())) for i in range(50000)]
-    points = [Vec(*p) for p in point_tuples]
-    tree = KdTree(points, max_depth=20)
-    in_range = tree.points_in_range((Vec(5, 19), Vec(100, 151)))
-    print(sorted(in_range))
-    if 6 <= Vec.box_calls <= 10:
-        print("Plausible number of in_box calls")
-    else:
-        print("Implausible number of in_box calls ({})".format(Vec.box_calls))
-    
+
+    # QuadTree tests
+    print("\n\nQuadTree tests")
+    tests = []  
     points = [(60, 15), (15, 60), (30, 58), (42, 66), (40, 70)]
     vecs = [Vec(*p) for p in points]
-    tree = QuadTree(vecs, Vec(50, 50), 100)
-    print(tree)
+    tree = QuadTree(vecs, centre=Vec(50, 50), size=100)# (points, centre, size, depth=0, max_leaf_points=2, max_depth=MAX_DEPTH):
 
+    '''rectangle = Vec(-1,-1), Vec(-999,-999)
+    test = sorted(tree.points_in_range(rectangle)) == sorted([])# no points in range
+    tests.append(test)
+    print("points_in_range", rectangle, test, tree.points_in_range(rectangle))'''
+    
     # Plot the tree, for debugging only
     axes = plt.axes()
     tree.plot(axes)
@@ -326,25 +329,23 @@ def main():
     axes.set_ylim(0, 100)
     plt.show()
 
+    
     points = [(1, 1), (99, 1), (1, 99), (99, 99), (49, 49), (51, 49), (49, 51), (51, 51)]
     vecs = [Vec(*p) for p in points]
     tree = QuadTree(vecs, Vec(50, 50), 100, max_leaf_points=1)
-    print(tree)
-
     # Plot the tree, for debugging only
     axes = plt.axes()
     tree.plot(axes)
     axes.set_xlim(0, 100)
     axes.set_ylim(0, 100)
     plt.show()
+
 
     points = [(1, 1), (99, 1), (1, 99), (99, 99),
              (49, 49), (51, 49), (49, 51), (51, 51),
              (60, 60), (70, 70), (80, 80), (90, 90)]
     vecs = [Vec(*p) for p in points]
     tree = QuadTree(vecs, Vec(50, 50), 100, max_leaf_points=1)
-    print(tree)
-
     # Plot the tree, for debugging only
     axes = plt.axes()
     tree.plot(axes)
@@ -352,12 +353,34 @@ def main():
     axes.set_ylim(0, 100)
     plt.show()
 
+
+    # binary_search_tree tests
+    print("\n\nbinary_search_tree tests")
+    tests = []
+    def bst_to_array(node):
+        if node == None:
+            return []
+        if node.left == node.right == None:# leaf
+            return [node.value]
+        return bst_to_array(node.left) + bst_to_array(node.right)
+    
     nums = [22, 41, 19, 27, 12, 35, 14, 20,  39, 10, 25, 44, 32, 21, 18]
-    nums = [15, 3, 11, 21, 7, 0, 19, 33, 29, 4]
-    nums = [228]
-    nums = [228, 227, 3]
     tree = binary_search_tree(nums)
-    print_tree(tree)
+    tests.append(bst_to_array(tree) == sorted(nums))
+    
+    nums = [15, 3, 11, 21, 7, 0, 19, 33, 29, 4]
+    tree = binary_search_tree(nums)
+    tests.append(bst_to_array(tree) == sorted(nums))
+    
+    nums = [228]
+    tree = binary_search_tree(nums)
+    tests.append(bst_to_array(tree) == sorted(nums))
+    
+    nums = [random.randint(-2**8,2**8) for x in range(2**10)]
+    tree = binary_search_tree(nums)
+    tests.append(bst_to_array(tree) == sorted(nums))
+
+    print(" binary_search_tree:", all(tests))
 
 
 if __name__ == '__main__':

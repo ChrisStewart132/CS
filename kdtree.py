@@ -87,9 +87,17 @@ class Vec:
         return self.dot(self)
 
     def in_box(self, bottom_left, top_right):
-        """True iff this point (self) lies within or on the
+        """True if this point (self) lies within or on the
            boundary of the given rectangular box area"""
         return bottom_left.x <= self.x <= top_right.x and bottom_left.y <= self.y <= top_right.y
+
+    def rectangles_overlap(rect1, rect2):
+        """given two rectangles (bottom_left_Vec, top_right_Vec) return True if they overlap"""
+        p1, p2 = rect1
+        p3, p4 = rect2         
+        if (p1.x <= p4.x and p2.x >= p3.x and p1.y <= p4.y and p2.y >= p3.y):
+            return True
+        return False
 
     def __getitem__(self, axis):
         return self.x if axis == 0 else self.y
@@ -235,18 +243,13 @@ class QuadTree:
            boundary of the given query rectangle, which is defined by a pair of points
            (bottom_left, top_right).
         """
-        def rectangles_overlap(rect1, rect2):
-            p1, p2 = rect1
-            p3, p4 = rect2         
-            if (p1.x < p4.x and p2.x > p3.x and p1.y < p4.y and p2.y > p3.y):
-                return True
-            return False
-       
+        print("  "*self.depth, "searching:", self.centre)
         bl_point, tr_point = rectangle[0], rectangle[1]
         matches = []# all points in node.points lying within rectangle
         if self.is_leaf:
             for point in self.points:
                 if point.in_box(bl_point, tr_point):
+                    print("  "*(self.depth+1),"point:",point,"in:",rectangle)
                     matches.append(point)
         else:
             matches = []
@@ -263,7 +266,7 @@ class QuadTree:
                 child_centre = Vec(x, y)
                 child_size = self.size / 2
                 quadrant = (Vec(child_centre.x-child_size, child_centre.y-child_size), Vec(child_centre.x+child_size, child_centre.y+child_size))
-                if rectangles_overlap(rectangle, quadrant):
+                if Vec.rectangles_overlap(rectangle, quadrant):
                     matches += self.children[i].points_in_range(rectangle)
                 
 
@@ -345,7 +348,30 @@ def main():
     plt.show()
 
 
+    # Vec.rectangles_overlap tests
+    print("\n\nVec.rectangles_overlap tests")
+    tests = []
+    rect1 = Vec(1,1), Vec(2,2)
+    rect2 = Vec(1,1), Vec(2,2)
+    tests.append(Vec.rectangles_overlap(rect1,rect2) == True)
 
+    rect2 = Vec(-1,-1), Vec(-2,-2)
+    tests.append(Vec.rectangles_overlap(rect1,rect2) == False)
+
+    rect2 = Vec(-1,-1), Vec(2,2)
+    tests.append(Vec.rectangles_overlap(rect1,rect2) == True)
+
+    rect2 = Vec(-2,-2), Vec(1,1)
+    tests.append(Vec.rectangles_overlap(rect1,rect2) == True)
+
+    rect2 = Vec(-2,-2), Vec(0.99,0.99)
+    tests.append(Vec.rectangles_overlap(rect1,rect2) == False)
+    
+    rect2 = Vec(0,0), Vec(0,0)
+    tests.append(Vec.rectangles_overlap(rect1,rect2) == False)
+    print(" Vec.rectangles_overlap:", all(tests), tests)
+
+    
     # QuadTree tests
     print("\n\nQuadTree tests")
     tests = []  
@@ -354,14 +380,41 @@ def main():
     tree = QuadTree(vecs, centre=Vec(50, 50), size=100)# (points, centre, size, depth=0, max_leaf_points=2, max_depth=MAX_DEPTH):
 
     rectangle = Vec(-1,-1), Vec(-999,-999)
-    test = sorted(tree.points_in_range(rectangle)) == sorted([])# no points in range
+    points_in_range = tree.points_in_range(rectangle)
+    test = sorted(points_in_range) == []# no points in range
     tests.append(test)
-    print("points_in_range", rectangle, test, tree.points_in_range(rectangle))
+    print("points_in_range", rectangle, test, points_in_range, "\n")
 
     rectangle = Vec(0,0), Vec(999,999)
-    test = sorted(tree.points_in_range(rectangle)) == sorted(vecs)# no points in range
+    points_in_range = tree.points_in_range(rectangle)
+    test = sorted(points_in_range) == sorted(vecs)# all points in range
     tests.append(test)
-    print("points_in_range", rectangle, test, tree.points_in_range(rectangle))
+    print("points_in_range", rectangle, test, points_in_range, "\n")
+
+    rectangle = Vec(59,14), Vec(61,16)
+    points_in_range = tree.points_in_range(rectangle)
+    test = sorted(points_in_range) == sorted([Vec(*p) for p in [(60, 15)]])# single point in range (bottom right quadrant)
+    tests.append(test)
+    print("points_in_range", rectangle, test, points_in_range, "\n")
+
+    rectangle = Vec(14,59), Vec(16,61)
+    points_in_range = tree.points_in_range(rectangle)
+    test = sorted(points_in_range) == sorted([Vec(*p) for p in [(15, 60)]])# single point in range (top left quadrant)
+    tests.append(test)
+    print("points_in_range", rectangle, test, points_in_range, "\n")
+
+    rectangle = Vec(0,0), Vec(40,999)
+    points_in_range = tree.points_in_range(rectangle)
+    test = sorted(points_in_range) == sorted([Vec(*p) for p in [(15, 60), (30, 58), (40, 70)]])
+    tests.append(test)
+    print("points_in_range", rectangle, test, points_in_range, "\n")
+
+    
+    rectangle = Vec(0,20), Vec(50,60)
+    points_in_range = tree.points_in_range(rectangle)
+    test = sorted(points_in_range) == sorted([Vec(*p) for p in [(15, 60), (30, 58)]])
+    tests.append(test)
+    print("points_in_range", rectangle, test, points_in_range, "\n")
 
     print(" QuadTree:", all(tests))    
     axes = plt.axes()
@@ -371,7 +424,7 @@ def main():
     plt.show()
 
 
-    return
+    
     points = [(1, 1), (99, 1), (1, 99), (99, 99), (49, 49), (51, 49), (49, 51), (51, 51)]
     vecs = [Vec(*p) for p in points]
     tree = QuadTree(vecs, Vec(50, 50), 100, max_leaf_points=1)

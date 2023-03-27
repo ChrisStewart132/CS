@@ -445,7 +445,7 @@ def main():
             print()
             print(sorted( [ x for x in points if points[i].in_box((*rectangle))]),'\n')
             print("\n", points)
-            return
+            
 
     print(" QuadTree:", all(tests))    
     axes = plt.axes()
@@ -453,7 +453,7 @@ def main():
     axes.set_xlim(-2**8, 2**8)
     axes.set_ylim(-2**8, 2**8)
     plt.show()
-    return
+    
 
 
     # binary_search_tree tests
@@ -481,6 +481,17 @@ def main():
     nums = [random.randint(-2**8,2**8) for x in range(2**10)]
     tree = binary_search_tree(nums)
     tests.append(bst_to_array(tree) == sorted(nums))
+
+    # bst random tests
+    for i in range(2**8):
+        nums = [random.randint(-2**8,2**8) for x in range(2**8)]
+        tree = binary_search_tree(nums)
+        test = bst_to_array(tree) == sorted(nums)
+        tests.append(test)
+        if not test:          
+            print('bst error',nums,tree)
+            return
+        
 
     print(" binary_search_tree:", all(tests))
 

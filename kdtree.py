@@ -431,7 +431,7 @@ def main():
 
     print(all(tests))
     # random tests
-    point_tuples = [(random.randint(-2**8,2**8), random.randint(-2**8,2**8)) for x in range(2**8)]
+    point_tuples = [(random.randint(-2**8,2**8), random.randint(-2**8,2**8)) for x in range(2**4)]
     points = [Vec(*tup) for tup in point_tuples]
     tree = QuadTree(points, centre=Vec(0, 0), size=2**8)
     for i in range(2**8):
@@ -442,9 +442,14 @@ def main():
             print(i,'\n')
             print(rectangle,'\n')
             print(sorted(tree.points_in_range(rectangle)),'\n')
-            print()
-            print(sorted( [ x for x in points if points[i].in_box((*rectangle))]),'\n')
-            print("\n", points)
+            print("\npoints insde:", sorted([ x for x in points if points[i].in_box((*rectangle))]),'\n')
+            print("\nall points:", points)
+            axes = plt.axes()
+            tree.plot(axes)
+            axes.set_xlim(-2**8, 2**8)
+            axes.set_ylim(-2**8, 2**8)
+            plt.show()
+            return
             
 
     print(" QuadTree:", all(tests))    

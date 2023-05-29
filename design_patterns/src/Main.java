@@ -33,10 +33,7 @@ public class Main{
         System.out.println(singleton1 == singleton2);
 
 
-
-
-
-
+        
         Scanner scanner = new Scanner(System.in);
         String input = scanner.nextLine();
         return;

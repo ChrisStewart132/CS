@@ -11,11 +11,11 @@ public class Main{
         // consumer class only cares about the full iteration of a collection
         // the implementation of the Iterator interface dictates the method of traversal (inOrder, dfs, bfs etc.)
         Integer[] data = {1,2,3,4};
-        ArrayIterator aI = new ArrayIterator<Integer>(data);
+        ArrayIterator arrayIterator = new ArrayIterator<Integer>(data);
 
         Integer[] iteratedData = new Integer[data.length];
-        for(int i = 0; !aI.isDone(); i++) {
-            iteratedData[i] = (Integer)aI.next();
+        for(int i = 0; !arrayIterator.isDone(); i++) {
+            iteratedData[i] = (Integer)arrayIterator.next();
         }
         System.out.println(Arrays.toString(data));
         System.out.println(Arrays.toString(iteratedData));

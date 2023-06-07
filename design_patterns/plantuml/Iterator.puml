@@ -1,0 +1,25 @@
+@startuml
+class Client{}
+
+interface Iterator {
++First()
++Next()
++isDone()
++CurrentItem()
+}
+
+interface Collection {
++CreateIterator(): Iterator
+}
+
+class ConcreteIterator implements Iterator{}
+
+class ConcreteCollection implements Collection{
++CreateIterator(): (Iterator)ConcreteIterator 
+}
+
+Client --> Collection : owns >
+Client --> Iterator : owns >
+ConcreteIterator --> ConcreteCollection : accesses >
+ConcreteCollection ..> ConcreteIterator : Creates >
+@enduml
